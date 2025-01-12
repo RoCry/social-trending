@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any
 import asyncio
 import httpx
@@ -107,6 +107,6 @@ class HackerNewsClient:
         logger.info(f"GET TOP {top_n} stories: {len(stories)}")
 
         return HNResponse(
-            updated_at=datetime.utcnow(),
+            updated_at=datetime.now(timezone.utc),
             stories=stories
         ) 
