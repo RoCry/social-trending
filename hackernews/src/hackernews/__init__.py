@@ -16,7 +16,7 @@ def main() -> None:
         print("\nComments:")
         # Print L0 comments
         for comment in story.comments[:3]:
-            print(f"├─ {comment.by}: {comment.text[:100]}...")
+            print(f"├─ {comment.by}: {comment.text[:140]}...")
             # Print L1 comments
             for reply in comment.replies[:2]:
-                print(f"│  └─ {reply.by}: {reply.text[:100]}...")
+                print(f"│  └─ {reply.by}: {reply.text[:140]}...")

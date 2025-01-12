@@ -275,10 +275,16 @@ dependencies = [
     { name = "trafilatura" },
 ]
 
+[package.optional-dependencies]
+test = [
+    { name = "pytest" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.25.0" },
     { name = "pydantic", specifier = ">=2.0.0" },
+    { name = "pytest", marker = "extra == 'test'", specifier = ">=7.0.0" },
     { name = "trafilatura", specifier = ">=2.0.0" },
 ]
 
