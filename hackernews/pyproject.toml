@@ -1,13 +1,16 @@
 [project]
 name = "hackernews"
 version = "0.1.0"
-description = "Add your description here"
+description = "A simple async HackerNews API client"
 readme = "README.md"
 authors = [
     { name = "RoCry", email = "crysheen@gmail.com" }
 ]
-requires-python = ">=3.13"
-dependencies = []
+requires-python = ">=3.9"
+dependencies = [
+    "httpx>=0.25.0",
+    "pydantic>=2.0.0"
+]
 
 [project.scripts]
 hackernews = "hackernews:main"

@@ -231,6 +231,16 @@ wheels = [
 name = "hackernews"
 version = "0.1.0"
 source = { editable = "hackernews" }
+dependencies = [
+    { name = "httpx" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.25.0" },
+    { name = "pydantic", specifier = ">=2.0.0" },
+]
 
 [[package]]
 name = "httpcore"
