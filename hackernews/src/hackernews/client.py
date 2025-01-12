@@ -8,10 +8,11 @@ from .log import logger
 class HackerNewsClient:
     BASE_URL = "https://hacker-news.firebaseio.com/v0"
     
-    def __init__(self, max_concurrent_requests: int = 5, timeout: float = 30.0):
+    def __init__(self, max_concurrent_requests: int = 5, timeout: float = 30.0, max_comment_depth: int = 2):
         self.semaphore = asyncio.Semaphore(max_concurrent_requests)
         self.timeout = timeout
         self.client = httpx.AsyncClient(timeout=timeout)
+        self.max_comment_depth = max_comment_depth
         
     async def __aenter__(self):
         return self
@@ -19,9 +20,8 @@ class HackerNewsClient:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.client.aclose()
         
-    async def _make_request(self, url: str, context: str = "") -> Dict[str, Any]:
+    async def _make_request(self, url: str) -> Dict[str, Any]:
         async with self.semaphore:
-            logger.debug(f"{context} Request: {url}")
             response = await self.client.get(url)
             response.raise_for_status()
             return response.json()
@@ -36,9 +36,10 @@ class HackerNewsClient:
         return await self._make_request(url)
 
     async def fetch_comments(self, comment_ids: List[int], depth: int = 0) -> List[Comment]:
-        if not comment_ids:
+        if not comment_ids or depth >= self.max_comment_depth:
             return []
 
+        logger.debug(f"Fetching L{depth} comments: {len(comment_ids)}")
         tasks = []
         for comment_id in comment_ids:
             tasks.append(self.get_item(comment_id))
@@ -70,11 +71,12 @@ class HackerNewsClient:
 
         return comments
 
-    async def fetch_story(self, story_id: int) -> Story:
+    async def fetch_story(self, story_id: int, index: int) -> Story:
+        logger.debug(f"Fetching story {index}: {story_id}")
         story_data = await self.get_item(story_id)
         comments = await self.fetch_comments(story_data.get('kids', []))
         
-        return Story(
+        story = Story(
             id=story_data['id'],
             title=story_data['title'],
             url=story_data.get('url'),
@@ -86,14 +88,16 @@ class HackerNewsClient:
             kids=story_data.get('kids', []),
             comments=comments
         )
+        logger.debug(f"Fetched story {index}: {story_id} with {len(comments)} comments(total {story_data.get('descendants', 0)})")
+        return story
 
     async def fetch_top_stories(self, top_n: int = 10) -> HNResponse:
         logger.info(f"Fetching top {top_n} stories...")
         story_ids = await self.get_top_story_ids(limit=top_n)
         
         tasks = []
-        for story_id in story_ids:
-            tasks.append(self.fetch_story(story_id))
+        for index, story_id in enumerate(story_ids, 1):
+            tasks.append(self.fetch_story(story_id, index))
             
         stories = await asyncio.gather(*tasks)
         logger.info(f"Completed fetching {len(stories)} stories")
