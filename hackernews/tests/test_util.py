@@ -1,5 +1,6 @@
 from hackernews.util import normalize_html
 
+
 def test_normalize_html_entities():
     test_cases = [
         ("I&#x27;m", "I'm"),
@@ -8,9 +9,10 @@ def test_normalize_html_entities():
         ("", ""),  # Empty string
         (None, None),  # None value
     ]
-    
+
     for input_text, expected in test_cases:
         assert normalize_html(input_text) == expected
+
 
 def test_normalize_html_content():
     html_content = """
@@ -18,7 +20,8 @@ def test_normalize_html_content():
     <div>World &amp; Universe</div>
     """
     expected = "Hello World & Universe"
-    assert normalize_html(html_content).replace('\n', ' ').strip() == expected
+    assert normalize_html(html_content).replace("\n", " ").strip() == expected
+
 
 def test_normalize_complex_content():
     html_content = """
@@ -28,4 +31,4 @@ def test_normalize_complex_content():
     result = normalize_html(html_content).strip()
     assert 'I\'m writing "code" with Python' in result
     assert 'print("Hello")' in result
-    assert result.count('\n') == 1  # Verify there's one newline between elements 
+    assert result.count("\n") == 1  # Verify there's one newline between elements

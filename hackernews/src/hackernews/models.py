@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field
 
+
 class Comment(BaseModel):
     id: int
     text: str
@@ -11,7 +12,8 @@ class Comment(BaseModel):
     parent: Optional[int] = None
     deleted: bool = False
     dead: bool = False
-    replies: List['Comment'] = Field(default_factory=list)
+    replies: List["Comment"] = Field(default_factory=list)
+
 
 class Story(BaseModel):
     id: int
@@ -25,6 +27,7 @@ class Story(BaseModel):
     kids: List[int] = Field(default_factory=list)
     comments: List[Comment] = Field(default_factory=list)
 
+
 class HNResponse(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    stories: List[Story] = Field(default_factory=list) 
+    stories: List[Story] = Field(default_factory=list)
