@@ -711,6 +711,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "litellm" },
+    { name = "pydantic" },
     { name = "python-dotenv" },
 ]
 
@@ -727,6 +728,7 @@ lint = [
 [package.metadata]
 requires-dist = [
     { name = "litellm", specifier = ">=1.57.5" },
+    { name = "pydantic", specifier = ">=2.10.5" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
 ]
 
