@@ -4,6 +4,7 @@ import asyncio
 import httpx
 from .models import Story, Comment, HNResponse
 from .log import logger
+from .util import normalize_html
 
 class HackerNewsClient:
     BASE_URL = "https://hacker-news.firebaseio.com/v0"
@@ -59,7 +60,7 @@ class HackerNewsClient:
 
             comment = Comment(
                 id=comment_data['id'],
-                text=comment_data.get('text', ''),
+                text=normalize_html(comment_data.get('text', '')),
                 by=comment_data.get('by'),
                 time=datetime.fromtimestamp(comment_data['time']),
                 kids=comment_data.get('kids', []),
@@ -82,7 +83,7 @@ class HackerNewsClient:
             id=story_data['id'],
             title=story_data['title'],
             url=story_data.get('url'),
-            text=story_data.get('text'),
+            text=normalize_html(story_data.get('text', '')),
             by=story_data['by'],
             time=datetime.fromtimestamp(story_data['time']),
             score=story_data['score'],
