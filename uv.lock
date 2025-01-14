@@ -892,6 +892,7 @@ dependencies = [
     { name = "litellm" },
     { name = "pydantic" },
     { name = "python-dotenv" },
+    { name = "trafilatura" },
 ]
 
 [package.dev-dependencies]
@@ -910,6 +911,7 @@ requires-dist = [
     { name = "litellm", specifier = ">=1.57.5" },
     { name = "pydantic", specifier = ">=2.10.5" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
+    { name = "trafilatura", specifier = ">=2.0.0" },
 ]
 
 [package.metadata.requires-dev]

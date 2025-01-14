@@ -13,4 +13,4 @@ style:
 	ruff format $(check_dirs)
 
 test:
-	python -m pytest -s -v
+	uv run -m pytest -s -v

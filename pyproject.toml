@@ -9,6 +9,7 @@ dependencies = [
     "litellm>=1.57.5",
     "pydantic>=2.10.5",
     "python-dotenv>=1.0.1",
+    "trafilatura>=2.0.0",
 ]
 
 [dependency-groups]
