@@ -2,7 +2,7 @@ import logging
 import os
 
 # Configure logging
-logger = logging.getLogger("hackernews")
+logger = logging.getLogger("social-trending")
 logger.setLevel(os.environ.get("LOGLEVEL", "INFO"))
 
 if not logger.handlers:

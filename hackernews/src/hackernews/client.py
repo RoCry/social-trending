@@ -3,7 +3,7 @@ from typing import List, Dict, Any
 import asyncio
 import httpx
 from .models import Story, Comment, HNResponse
-from .log import logger
+from util.logging import logger
 from .util import normalize_html
 
 

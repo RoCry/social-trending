@@ -23,4 +23,4 @@ dev = [
 ]
 
 [tool.uv.workspace]
-members = ["hackernews"]
+members = ["hackernews", "util"]
