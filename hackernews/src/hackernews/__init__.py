@@ -18,9 +18,9 @@ def main() -> None:
         print("\nComments:")
         # Print L0 comments
         for comment in story.comments[:3]:
-            text = comment.text[:140].replace('\n', '\n│  ├─ ')
+            text = comment.text[:140].replace("\n", "\n│  ├─ ")
             print(f"├─ {comment.by}: {text}...")
             # Print L1 comments
             for reply in comment.replies[:2]:
-                reply_text = reply.text[:140].replace('\n', '\n│     └─ ')
+                reply_text = reply.text[:140].replace("\n", "\n│     └─ ")
                 print(f"│  └─ {reply.by}: {reply_text}...")
