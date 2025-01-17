@@ -54,7 +54,7 @@ Output the final result in this exact format:
 }"""
 
     response = await acompletion(
-        model="deepseek-chat",  # Using deepseek as in comment_viewpoint.py
+        model="deepseek/deepseek-chat",  # Using deepseek as in comment_viewpoint.py
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt},
