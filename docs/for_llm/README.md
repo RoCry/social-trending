@@ -1,8 +1,6 @@
 > all the docs in this folder are for the llm
 
 # Tech
-The content will be transformed into a unified format like:
-
 ```mermaid
 graph TD
     subgraph GitHub-Action
