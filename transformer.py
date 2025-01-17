@@ -1,12 +1,13 @@
 from typing import Dict, Any
 import litellm
 from utils import logger
+import json
 
 async def generate_perspective(
     title: str, content: str | None, comments: list[dict]
 ) -> Dict[str, Any]:
     """Generate AI perspective on the content and comments."""
-    logger.info(f"Generating perspective for {title}, {litellm.api_version}")
+    logger.info(f"Generating perspective for {title}")
     comments_text = "\n".join([f"- {c['author']}: {c['content']}" for c in comments])
 
     prompt = f"""
@@ -66,16 +67,23 @@ Output the final result in this exact format:
 
 async def transform_story(story: Dict[str, Any]) -> Dict[str, Any]:
     """Transform a story by adding AI-generated fields."""
+    # Skip if we already have AI fields and they don't need regeneration
+    if all(
+        k in story for k in ["_summary", "_perspective", "_generated_at_comment_count"]
+    ):
+        return story
+
     # Generate perspective if we have enough comments
-    if len(story["comments"]) > 0:
+    if len(story["comments"]) > 0 and story.get("_perspective") is None:
         perspective = await generate_perspective(
             story["title"], story["content"], story["comments"]
         )
-        story["_perspective"] = perspective
+        story["_perspective"] = json.loads(perspective)
         story["_generated_at_comment_count"] = len(story["comments"])
 
     # Generate summary if we have content
-    if story["content"]:
+    if story["content"] and story.get("_summary") is None:
+        logger.info(f"Generating summary for {story['title']}")
         summary_prompt = f"""Title: {story["title"]}
 Content: {story["content"]}
 
@@ -97,32 +105,3 @@ async def transform_stories(stories: list[Dict[str, Any]]) -> list[Dict[str, Any
         transformed_story = await transform_story(story)
         transformed.append(transformed_story)
     return transformed
-
-
-if __name__ == "__main__":
-    import asyncio
-    import json
-    from pathlib import Path
-
-    async def test():
-        # Load the latest cache file
-        cache_dir = Path("cache")
-        cache_files = sorted(cache_dir.glob("*_hackernews.json"))
-        if not cache_files:
-            print("No cache files found")
-            return
-
-        latest_cache = cache_files[-1]
-        with open(latest_cache) as f:
-            stories = json.load(f)
-
-        # Transform stories
-        transformed = await transform_stories(stories)
-
-        # Save transformed stories
-        output_file = cache_dir / f"{latest_cache.stem}_transformed.json"
-        with open(output_file, "w") as f:
-            json.dump(transformed, f, indent=2)
-        print(f"Transformed stories saved to {output_file}")
-
-    asyncio.run(test())
