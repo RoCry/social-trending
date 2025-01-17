@@ -1,5 +1,4 @@
 import asyncio
-
 from hackernews_crawler import fetch_top_stories
 from transformer import transform_stories
 from db import Database

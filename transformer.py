@@ -1,12 +1,12 @@
 from typing import Dict, Any
-
-from litellm import acompletion
-
+import litellm
+from utils import logger
 
 async def generate_perspective(
     title: str, content: str | None, comments: list[dict]
 ) -> Dict[str, Any]:
     """Generate AI perspective on the content and comments."""
+    logger.info(f"Generating perspective for {title}, {litellm.api_version}")
     comments_text = "\n".join([f"- {c['author']}: {c['content']}" for c in comments])
 
     prompt = f"""
@@ -53,7 +53,7 @@ Output the final result in this exact format:
     ]
 }"""
 
-    response = await acompletion(
+    response = await litellm.acompletion(
         model="deepseek/deepseek-chat",  # Using deepseek as in comment_viewpoint.py
         messages=[
             {"role": "system", "content": system_prompt},
@@ -81,8 +81,8 @@ Content: {story["content"]}
 
 Please provide a concise one-paragraph summary of the above content."""
 
-        summary_response = await acompletion(
-            model="deepseek-chat",
+        summary_response = await litellm.acompletion(
+            model="deepseek/deepseek-chat",
             messages=[{"role": "user", "content": summary_prompt}],
         )
         story["_summary"] = summary_response.choices[0].message.content
