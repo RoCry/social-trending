@@ -14,7 +14,9 @@ class Crawler:
         if downloaded:
             result = trafilatura.extract(downloaded, include_comments=False)
             if result:
-                logger.debug(f"Trafilatura fetched {url}:\n{result.splitlines()[:3]}\n...")
+                logger.debug(
+                    f"Trafilatura fetched {url}:\n{result.splitlines()[:3]}\n..."
+                )
                 return result
         return None
 
