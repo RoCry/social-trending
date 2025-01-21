@@ -43,7 +43,7 @@ async def main():
     # Fetch stories
     logger.info("Fetching stories from Hacker News...")
     crawler = HackerNewsCrawler()
-    items = await crawler.fetch_top_stories(db_path, count=1)
+    items = await crawler.fetch_top_stories(db_path, count=5)
 
     # Merge with cache
     logger.info("Merging with cached items...")
