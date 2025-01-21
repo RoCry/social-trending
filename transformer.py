@@ -77,7 +77,7 @@ async def _transform_item_if_needed(item: Item) -> Item:
         # already generated, check if comments changed a lot
         if item.generated_at_comment_count is not None:
             comment_diff = abs(item.generated_at_comment_count - len(item.comments))
-            if comment_diff <= 2:
+            if comment_diff <= 5:
                 logger.info(
                     f"Skipping ai generation for '{item.title}' with comment count {len(item.comments)}"
                 )
@@ -90,14 +90,19 @@ async def _transform_item_if_needed(item: Item) -> Item:
 
     # Generate perspective if we have enough comments
     MIN_COMMENTS_FOR_PERSPECTIVE = 5
-    if len(item.comments) >= MIN_COMMENTS_FOR_PERSPECTIVE and item.ai_perspective is None:
+    if (
+        len(item.comments) >= MIN_COMMENTS_FOR_PERSPECTIVE
+        and item.ai_perspective is None
+    ):
         perspective = await _generate_perspective(
             item.title, item.content, item.comments
         )
         item.ai_perspective = perspective
         item.generated_at_comment_count = len(item.comments)
     elif len(item.comments) > 0 and len(item.comments) < MIN_COMMENTS_FOR_PERSPECTIVE:
-        logger.info(f"Skipping perspective generation for '{item.title}' due to insufficient comments ({len(item.comments)})")
+        logger.info(
+            f"Skipping perspective generation for '{item.title}' due to insufficient comments ({len(item.comments)})"
+        )
 
     # Generate summary if we have content
     if item.content and item.ai_summary is None:
@@ -118,22 +123,24 @@ Please provide a concise one-paragraph summary of the above content."""
 
 def perspective_to_md(perspective: Perspective, comments: List[Comment]) -> str:
     sections = []
-    
+
     # Title section
     sections.append(f"### AI Perspective: {perspective.title}\n")
-    
+
     # Summary and sentiment section
     sections.append("<details><summary>Perspective Summary</summary>")
     sections.append(f"{perspective.summary}")
     sections.append("</details>\n")
-    
+
     # Viewpoints section
     if perspective.viewpoints:
-        sections.append(f"### {len(perspective.viewpoints)} Key Viewpoints ({len(comments)} comments)")
+        sections.append(
+            f"### {len(perspective.viewpoints)} Key Viewpoints ({len(comments)} comments)"
+        )
         sections.append(f"> **Overall Sentiment**: {perspective.sentiment}\n")
         for vp in perspective.viewpoints:
             sections.append(f"- {vp.statement} _(~{vp.support_percentage:.0f}%)_")
-    
+
     return "\n".join(sections)
 
 
