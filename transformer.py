@@ -75,17 +75,18 @@ async def _transform_item_if_needed(item: Item) -> Item:
         for k in ["ai_summary", "ai_perspective", "generated_at_comment_count"]
     ):
         # already generated, check if comments changed a lot
-        new_comments_count = item.generated_at_comment_count - len(item.comments)
-        if new_comments_count <= 2:
-            logger.info(
-                f"Skipping ai generation for '{item.title}' with comment count {len(item.comments)}"
-            )
-            return item
+        if item.generated_at_comment_count is not None:
+            comment_diff = abs(item.generated_at_comment_count - len(item.comments))
+            if comment_diff <= 2:
+                logger.info(
+                    f"Skipping ai generation for '{item.title}' with comment count {len(item.comments)}"
+                )
+                return item
 
-        logger.info(
-            f"Comments changed from {item.generated_at_comment_count} to {len(item.comments)}, regenerating perspective for '{item.title}'"
-        )
-        item.ai_perspective = None
+            logger.info(
+                f"Comments changed from {item.generated_at_comment_count} to {len(item.comments)}, regenerating perspective for '{item.title}'"
+            )
+            item.ai_perspective = None
 
     # Generate perspective if we have enough comments
     if len(item.comments) > 0 and item.ai_perspective is None:
