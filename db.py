@@ -1,10 +1,11 @@
 import json
 from datetime import datetime, timedelta, UTC
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional
 
 import aiosqlite
 from utils import logger
+from models import Item
 
 ITEM_TABLE_NAME = "item"
 
@@ -36,12 +37,12 @@ class Database:
             await db.commit()
             logger.info(f"Database initialized at {self.db_path}")
 
-    async def upsert_item(self, item: Dict[str, Any]) -> None:
+    async def upsert_item(self, item: Item) -> None:
         """Insert or update an item in the database."""
         async with aiosqlite.connect(self.db_path) as db:
             # Check if item exists
             async with db.execute(
-                f"SELECT created_at FROM {ITEM_TABLE_NAME} WHERE id = ?", (item["id"],)
+                f"SELECT created_at FROM {ITEM_TABLE_NAME} WHERE id = ?", (item.id,)
             ) as cursor:
                 existing = await cursor.fetchone()
 
@@ -49,18 +50,18 @@ class Database:
                 # Update existing item
                 await db.execute(
                     f"UPDATE {ITEM_TABLE_NAME} SET updated_at = CURRENT_TIMESTAMP, payload = ? WHERE id = ?",
-                    (json.dumps(item), item["id"]),
+                    (item.model_dump_json(), item.id),
                 )
             else:
                 # Insert new item
                 await db.execute(
                     f"INSERT INTO {ITEM_TABLE_NAME} (id, payload) VALUES (?, ?)",
-                    (item["id"], json.dumps(item)),
+                    (item.id, item.model_dump_json()),
                 )
 
             await db.commit()
 
-    async def get_item(self, item_id: str) -> Optional[Dict[str, Any]]:
+    async def get_item(self, item_id: str) -> Optional[Item]:
         """Get an item by ID."""
         async with aiosqlite.connect(self.db_path) as db:
             async with db.execute(
@@ -68,7 +69,7 @@ class Database:
             ) as cursor:
                 row = await cursor.fetchone()
                 if row:
-                    return json.loads(row[0])
+                    return Item.model_validate_json(row[0])
         return None
 
     async def cleanup(self, before_days: int = 30) -> int:

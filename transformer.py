@@ -1,15 +1,16 @@
-from typing import Dict, Any
+from typing import List
 import litellm
 from utils import logger
 import json
+from models import Item, Perspective, ViewPoint
 
 
 async def _generate_perspective(
     title: str, content: str | None, comments: list[dict]
-) -> Dict[str, Any]:
+) -> Perspective:
     """Generate AI perspective on the content and comments."""
     logger.info(f"Generating perspective for '{title}'")
-    comments_text = "\n".join([f"- {c['author']}: {c['content']}" for c in comments])
+    comments_text = "\n".join([f"- {c.author}: {c.content}" for c in comments])
 
     prompt = f"""
 Title: {title}
@@ -63,34 +64,36 @@ Output the final result in this exact format:
         ],
     )
 
-    return response.choices[0].message.content
+    perspective_data = json.loads(response.choices[0].message.content)
+    return Perspective(**perspective_data)
 
-async def _transform_item_if_needed(item: Dict[str, Any]) -> Dict[str, Any]:
+
+async def _transform_item_if_needed(item: Item) -> Item:
     if all(
-        k in item for k in ["_summary", "_perspective", "_generated_at_comment_count"]
+        k in item.model_fields_set for k in ["ai_summary", "ai_perspective", "generated_at_comment_count"]
     ):
         # already generated, check if comments changed a lot
-        new_comments_count = item["_generated_at_comment_count"] - len(item["comments"])
+        new_comments_count = item.generated_at_comment_count - len(item.comments)
         if new_comments_count <= 2:
-            logger.info(f"Skipping ai generation for '{item['title']}' with comment count {len(item['comments'])}")
+            logger.info(f"Skipping ai generation for '{item.title}' with comment count {len(item.comments)}")
             return item
 
-        logger.info(f"Comments changed from {item['_generated_at_comment_count']} to {len(item['comments'])}, regenerating perspective for '{item['title']}'")
-        item["_perspective"] = None
+        logger.info(f"Comments changed from {item.generated_at_comment_count} to {len(item.comments)}, regenerating perspective for '{item.title}'")
+        item.ai_perspective = None
 
     # Generate perspective if we have enough comments
-    if len(item["comments"]) > 0 and item.get("_perspective") is None:
+    if len(item.comments) > 0 and item.ai_perspective is None:
         perspective = await _generate_perspective(
-            item["title"], item["content"], item["comments"]
+            item.title, item.content, item.comments
         )
-        item["_perspective"] = json.loads(perspective)
-        item["_generated_at_comment_count"] = len(item["comments"])
+        item.ai_perspective = perspective
+        item.generated_at_comment_count = len(item.comments)
 
     # Generate summary if we have content
-    if item["content"] and item.get("_summary") is None:
-        logger.info(f"Generating summary for '{item['title']}'")
-        summary_prompt = f"""Title: {item["title"]}
-Content: {item["content"]}
+    if item.content and item.ai_summary is None:
+        logger.info(f"Generating summary for '{item.title}'")
+        summary_prompt = f"""Title: {item.title}
+Content: {item.content}
 
 Please provide a concise one-paragraph summary of the above content."""
 
@@ -98,12 +101,12 @@ Please provide a concise one-paragraph summary of the above content."""
             model="deepseek/deepseek-chat",
             messages=[{"role": "user", "content": summary_prompt}],
         )
-        item["_summary"] = summary_response.choices[0].message.content
+        item.ai_summary = summary_response.choices[0].message.content
 
     return item
 
 
-async def transform_items(items: list[Dict[str, Any]]) -> list[Dict[str, Any]]:
+async def transform_items(items: List[Item]) -> List[Item]:
     """Transform multiple items in parallel."""
     transformed = []
     for item in items:

@@ -4,24 +4,26 @@ from crawlers.hn import HackerNewsCrawler
 from transformer import transform_items
 from db import Database
 from utils import logger
+from models import Item
 import dotenv
 
 dotenv.load_dotenv()
 import os
 print(os.getenv("DEEPSEEK_API_KEY"))
 
-async def merge_with_cache(db: Database, now: datetime, new_items: list[dict]) -> list[dict]:
+
+async def merge_with_cache(db: Database, now: datetime, new_items: list[Item]) -> list[Item]:
     merged = []
     for new_item in new_items:
-        exist_item = await db.get_item(new_item["id"])
+        exist_item = await db.get_item(new_item.id)
         if not exist_item:
             # no cache, just add it
             merged.append(new_item)
             continue
 
         # we assume only the comments will change
-        exist_item["comments"] = new_item["comments"]
-        exist_item["updated_at"] = now.isoformat()
+        exist_item.comments = new_item.comments
+        exist_item.updated_at = now
         merged.append(exist_item)
     return merged
 
