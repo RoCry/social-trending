@@ -5,7 +5,7 @@ from typing import Optional
 from utils import logger
 
 
-class Crawler:
+class BaseCrawler:
     def __init__(self, timeout: int = 10):
         self.timeout = timeout
 
@@ -64,10 +64,4 @@ class Crawler:
             return self._fetch_with_jina(url)
         except Exception as e:
             logger.warning(f"Jina.ai failed for {url}: {str(e)}")
-            return None
-
-
-def url_to_markdown(url: str) -> Optional[str]:
-    """Convert URL to markdown/text"""
-    crawler = Crawler()
-    return crawler.fetch_url(url)
+            return None 

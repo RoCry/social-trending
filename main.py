@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime, timedelta, UTC
-from crawler_hn import fetch_top_stories
+from crawlers.hn import HackerNewsCrawler
 from transformer import transform_items
 from db import Database
 from utils import logger
@@ -39,7 +39,8 @@ async def main():
 
     # Fetch stories
     logger.info("Fetching stories from Hacker News...")
-    items = await fetch_top_stories(db_path, count=1)  # Start with 1 for testing
+    crawler = HackerNewsCrawler()
+    items = await crawler.fetch_top_stories(db_path, count=1)
 
     # Merge with cache
     logger.info("Merging with cached items...")
