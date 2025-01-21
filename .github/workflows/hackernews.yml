@@ -37,12 +37,6 @@ jobs:
         restore-keys: |
           hackernews-cache-
     
-    - name: Set current datetime
-      id: set_date
-      run: |
-        echo "DATETIME=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_ENV
-        echo "DATETIME=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_OUTPUT
-
     - name: Run crawler
       env:
         DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
@@ -59,8 +53,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        name: "HackerNews Top Stories ${{ env.DATETIME }}"
-        tag_name: ${{ env.DATETIME }}
+        name: "HackerNews Top Stories"
+        tag_name: latest
         body_path: cache/hackernews.md
-        files: cache/hackernews.md
+        files: |
+          cache/*
         prerelease: true
