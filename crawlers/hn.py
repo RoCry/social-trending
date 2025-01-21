@@ -10,7 +10,7 @@ class HackerNewsCrawler(BaseCrawler):
     async def fetch_top_stories(self, cache_db_path: str, count: int = 3) -> List[Item]:
         """Fetch top stories from HN with their comments."""
         stories = []
-        async with HackerNewsClient(cache_path=cache_db_path) as client:
+        async with HackerNewsClient(cache_db_path=cache_db_path) as client:
             # Get top story IDs
             resp = await client.fetch_top_stories(
                 top_n=count, fetch_comment_levels_count=1
