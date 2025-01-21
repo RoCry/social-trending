@@ -65,13 +65,18 @@ Output the final result in this exact format:
 
     return response.choices[0].message.content
 
-# TODO: check if fulfill if needed logic
 async def _transform_item_if_needed(item: Dict[str, Any]) -> Dict[str, Any]:
-    # Skip if we already have AI fields and they don't need regeneration
     if all(
         k in item for k in ["_summary", "_perspective", "_generated_at_comment_count"]
     ):
-        return item
+        # already generated, check if comments changed a lot
+        new_comments_count = item["_generated_at_comment_count"] - len(item["comments"])
+        if new_comments_count <= 2:
+            logger.info(f"Skipping ai generation for '{item['title']}' with comment count {len(item['comments'])}")
+            return item
+
+        logger.info(f"Comments changed from {item['_generated_at_comment_count']} to {len(item['comments'])}, regenerating perspective for '{item['title']}'")
+        item["_perspective"] = None
 
     # Generate perspective if we have enough comments
     if len(item["comments"]) > 0 and item.get("_perspective") is None:
