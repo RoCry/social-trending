@@ -114,33 +114,42 @@ Please provide a concise one-paragraph summary of the above content."""
 
 
 def perspective_to_md(perspective: Perspective, comments: List[Comment]) -> str:
-    md = f"## {perspective.title}\n\n"
-    md += f"{perspective.summary}\n\n"
-    md += f"**Overall Sentiment**: {perspective.sentiment}\n\n"
-
+    sections = []
+    
+    # Title section
+    sections.append(f"### AI Perspective: {perspective.title}\n")
+    
+    # Summary and sentiment section
+    sections.append("<details><summary>Perspective Summary</summary>")
+    sections.append(f"{perspective.summary}")
+    sections.append("</details>\n")
+    
+    # Viewpoints section
     if perspective.viewpoints:
-        md += f"### Key Viewpoints(on {len(comments)} comments)\n\n"
+        sections.append(f"### {len(perspective.viewpoints)} Key Viewpoints ({len(comments)} comments)")
+        sections.append(f"> **Overall Sentiment**: {perspective.sentiment}\n")
         for vp in perspective.viewpoints:
-            md += f"- {vp.statement} _(~{vp.support_percentage:.0f}% support)_\n"
-
-    return md
+            sections.append(f"- {vp.statement} _(~{vp.support_percentage:.0f}%)_")
+    
+    return "\n".join(sections)
 
 
 def items_to_md(title: str, now: datetime, items: List[Item]) -> str:
     sections = []
-    sections.append(f"# {title}\n\n")
-    sections.append(f"_Generated at {now.isoformat()}_\n\n")
+    sections.append(f"# {title}\n")
+    sections.append(f"_Generated at {now.isoformat()}_\n")
 
     for item in items:
         sections.append(f"## [{item.title}]({item.url})\n\n")
 
         if item.ai_summary:
-            sections.append(f"{item.ai_summary}\n\n")
+            sections.append("<details><summary>AI Summary</summary>")
+            sections.append(f"{item.ai_summary}\n</details>\n\n")
 
         if item.ai_perspective:
             sections.append(perspective_to_md(item.ai_perspective, item.comments))
 
-        sections.append("---\n\n")
+        sections.append("---\n")
 
     return "\n".join(sections)
 
