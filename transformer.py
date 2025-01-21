@@ -3,11 +3,12 @@ import litellm
 from utils import logger
 import json
 
-async def generate_perspective(
+
+async def _generate_perspective(
     title: str, content: str | None, comments: list[dict]
 ) -> Dict[str, Any]:
     """Generate AI perspective on the content and comments."""
-    logger.info(f"Generating perspective for {title}")
+    logger.info(f"Generating perspective for '{title}'")
     comments_text = "\n".join([f"- {c['author']}: {c['content']}" for c in comments])
 
     prompt = f"""
@@ -64,28 +65,27 @@ Output the final result in this exact format:
 
     return response.choices[0].message.content
 
-
-async def transform_story(story: Dict[str, Any]) -> Dict[str, Any]:
-    """Transform a story by adding AI-generated fields."""
+# TODO: check if fulfill if needed logic
+async def _transform_item_if_needed(item: Dict[str, Any]) -> Dict[str, Any]:
     # Skip if we already have AI fields and they don't need regeneration
     if all(
-        k in story for k in ["_summary", "_perspective", "_generated_at_comment_count"]
+        k in item for k in ["_summary", "_perspective", "_generated_at_comment_count"]
     ):
-        return story
+        return item
 
     # Generate perspective if we have enough comments
-    if len(story["comments"]) > 0 and story.get("_perspective") is None:
-        perspective = await generate_perspective(
-            story["title"], story["content"], story["comments"]
+    if len(item["comments"]) > 0 and item.get("_perspective") is None:
+        perspective = await _generate_perspective(
+            item["title"], item["content"], item["comments"]
         )
-        story["_perspective"] = json.loads(perspective)
-        story["_generated_at_comment_count"] = len(story["comments"])
+        item["_perspective"] = json.loads(perspective)
+        item["_generated_at_comment_count"] = len(item["comments"])
 
     # Generate summary if we have content
-    if story["content"] and story.get("_summary") is None:
-        logger.info(f"Generating summary for {story['title']}")
-        summary_prompt = f"""Title: {story["title"]}
-Content: {story["content"]}
+    if item["content"] and item.get("_summary") is None:
+        logger.info(f"Generating summary for '{item['title']}'")
+        summary_prompt = f"""Title: {item["title"]}
+Content: {item["content"]}
 
 Please provide a concise one-paragraph summary of the above content."""
 
@@ -93,15 +93,15 @@ Please provide a concise one-paragraph summary of the above content."""
             model="deepseek/deepseek-chat",
             messages=[{"role": "user", "content": summary_prompt}],
         )
-        story["_summary"] = summary_response.choices[0].message.content
+        item["_summary"] = summary_response.choices[0].message.content
 
-    return story
+    return item
 
 
-async def transform_stories(stories: list[Dict[str, Any]]) -> list[Dict[str, Any]]:
-    """Transform multiple stories in parallel."""
+async def transform_items(items: list[Dict[str, Any]]) -> list[Dict[str, Any]]:
+    """Transform multiple items in parallel."""
     transformed = []
-    for story in stories:
-        transformed_story = await transform_story(story)
-        transformed.append(transformed_story)
+    for item in items:
+        transformed_item = await _transform_item_if_needed(item)
+        transformed.append(transformed_item)
     return transformed

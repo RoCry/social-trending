@@ -1,11 +1,5 @@
 # TODO
 
-- [ ] using `hackernews` to get the top 10 stories(using 3 for testing) and root comments
-- [ ] transformer.py to unify the format from sources
-- [ ] cache_manager.py to cache above data in json file, put it in `cache` folder as using `{TODAY}_{source}.json`, we will restore and cache it in github action
-- [ ] merge with cache, try figure out which fields needs regenerate with llm
-- [ ] llm_processor.py base on litellm, using pydantic
-
 final data structure will be like:
 ```json
 {
@@ -37,9 +31,6 @@ final data structure will be like:
     "perspective_md": "the markdown of the perspective", // optional, based on the perspective
 }
 ```
-
-- utils:
-    - [x] crawler.py to get llm friendly content from the url(with `trafilatura`)
 
 ## Exporter
 - [ ] generate a proper markdown for human reading in the release page

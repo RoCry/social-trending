@@ -5,6 +5,7 @@ from hackernews.client import HackerNewsClient
 from crawler import url_to_markdown
 
 
+# TODO: move the file to plugins
 async def fetch_top_stories(cache_db_path: str, count: int = 3) -> List[dict]:
     """Fetch top stories from HN with their comments."""
     stories = []
@@ -27,7 +28,6 @@ async def fetch_top_stories(cache_db_path: str, count: int = 3) -> List[dict]:
             story_data = {
                 "title": story.title,
                 "url": f"https://news.ycombinator.com/item?id={story.id}",
-                "source_url": story.url,  # original url
                 "content": content,
                 "comments": comments,
                 "published_at": story.time.isoformat(),

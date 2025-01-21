@@ -1,48 +1,53 @@
 import asyncio
 from datetime import datetime, timedelta, UTC
-from hackernews_crawler import fetch_top_stories
-from transformer import transform_stories
+from crawler_hn import fetch_top_stories
+from transformer import transform_items
 from db import Database
 from utils import logger
 import dotenv
 
 dotenv.load_dotenv()
+import os
+print(os.getenv("DEEPSEEK_API_KEY"))
 
-
-async def merge_with_cache(db: Database, new_stories: list[dict]) -> list[dict]:
-    """Merge new stories with cached versions, keeping AI fields if they exist."""
+async def merge_with_cache(db: Database, now: datetime, new_items: list[dict]) -> list[dict]:
     merged = []
-    for new in new_stories:
-        old = await db.get_item(new["id"])
-        # only the comments will change, so we use new.comments with old
-        if not old:
-            merged.append(new)
+    for new_item in new_items:
+        exist_item = await db.get_item(new_item["id"])
+        if not exist_item:
+            # no cache, just add it
+            merged.append(new_item)
             continue
-        old["comments"] = new["comments"]
-        merged.append(old)
+
+        # we assume only the comments will change
+        exist_item["comments"] = new_item["comments"]
+        exist_item["updated_at"] = now.isoformat()
+        merged.append(exist_item)
     return merged
 
 
 async def main():
     # Initialize database
-    db_path = "cache/social.sqlite3"
+    db_path = "cache/social.sqlite"
     db = Database(db_path)
     await db.init()
 
     # Clean up old items (keep last 30 days)
     await db.cleanup()
 
-    # 1. Fetch stories
-    logger.info("Fetching stories from Hacker News...")
-    stories = await fetch_top_stories(db_path, count=1)  # Start with 3 for testing
+    now = datetime.now(tz=UTC)
 
-    # 1.5 Merge with cache
+    # Fetch stories
+    logger.info("Fetching stories from Hacker News...")
+    items = await fetch_top_stories(db_path, count=1)  # Start with 1 for testing
+
+    # Merge with cache
     logger.info("Merging with cached items...")
-    stories = await merge_with_cache(db, stories)
+    items = await merge_with_cache(db, now, items)
 
     # 2. Transform and enhance with AI
     logger.info("Transforming stories with AI analysis...")
-    transformed = await transform_stories(stories)
+    transformed = await transform_items(items)
 
     # 3. Save to database
     for story in transformed:

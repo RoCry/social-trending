@@ -11,18 +11,16 @@ graph TD
             A1 & A2 & A3 --> A[Crawler]
         end
 
-        A --> |Raw Data| B[Transformer]
-        B --> |Structured Data| C[Data Processor]
+        A --> |Item| B[Transformer]
     
         subgraph Processing
-            C --> D[AI Enhancement]
-            D --> |Add Summary| E[Content Summary]
-            D --> |Add Keywords| F[Keyword Extraction]
-            D --> |Add Insights| G[Comment Analysis]
+            B --> C[AI Enhancement]
+            C --> |Add Summary| C1[Content Summary]
+            C --> |Add Insights| C3[Comment Analysis]
         end
         
         subgraph Export
-            E & F & G --> H[Exporter]
+            C1 & C3 --> H[Exporter]
             H --> |Static File| I[JSON File]
             H --> |RSS Compatible| J[JSON Feed]
             H --> |Static Site| K[HTML]
