@@ -89,12 +89,15 @@ async def _transform_item_if_needed(item: Item) -> Item:
             item.ai_perspective = None
 
     # Generate perspective if we have enough comments
-    if len(item.comments) > 0 and item.ai_perspective is None:
+    MIN_COMMENTS_FOR_PERSPECTIVE = 5
+    if len(item.comments) >= MIN_COMMENTS_FOR_PERSPECTIVE and item.ai_perspective is None:
         perspective = await _generate_perspective(
             item.title, item.content, item.comments
         )
         item.ai_perspective = perspective
         item.generated_at_comment_count = len(item.comments)
+    elif len(item.comments) > 0 and len(item.comments) < MIN_COMMENTS_FOR_PERSPECTIVE:
+        logger.info(f"Skipping perspective generation for '{item.title}' due to insufficient comments ({len(item.comments)})")
 
     # Generate summary if we have content
     if item.content and item.ai_summary is None:
