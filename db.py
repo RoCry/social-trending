@@ -1,4 +1,3 @@
-import json
 from datetime import datetime, timedelta, UTC
 from pathlib import Path
 from typing import Optional

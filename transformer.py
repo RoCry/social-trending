@@ -2,7 +2,8 @@ from typing import List
 import litellm
 from utils import logger
 import json
-from models import Item, Perspective, ViewPoint
+from models import Item, Perspective, Comment
+from datetime import datetime
 
 
 async def _generate_perspective(
@@ -57,7 +58,7 @@ Output the final result in this exact format:
 }"""
 
     response = await litellm.acompletion(
-        model="deepseek/deepseek-chat",  # Using deepseek as in comment_viewpoint.py
+        model="deepseek/deepseek-chat",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt},
@@ -70,15 +71,20 @@ Output the final result in this exact format:
 
 async def _transform_item_if_needed(item: Item) -> Item:
     if all(
-        k in item.model_fields_set for k in ["ai_summary", "ai_perspective", "generated_at_comment_count"]
+        k in item.model_fields_set
+        for k in ["ai_summary", "ai_perspective", "generated_at_comment_count"]
     ):
         # already generated, check if comments changed a lot
         new_comments_count = item.generated_at_comment_count - len(item.comments)
         if new_comments_count <= 2:
-            logger.info(f"Skipping ai generation for '{item.title}' with comment count {len(item.comments)}")
+            logger.info(
+                f"Skipping ai generation for '{item.title}' with comment count {len(item.comments)}"
+            )
             return item
 
-        logger.info(f"Comments changed from {item.generated_at_comment_count} to {len(item.comments)}, regenerating perspective for '{item.title}'")
+        logger.info(
+            f"Comments changed from {item.generated_at_comment_count} to {len(item.comments)}, regenerating perspective for '{item.title}'"
+        )
         item.ai_perspective = None
 
     # Generate perspective if we have enough comments
@@ -104,6 +110,38 @@ Please provide a concise one-paragraph summary of the above content."""
         item.ai_summary = summary_response.choices[0].message.content
 
     return item
+
+
+def perspective_to_md(perspective: Perspective, comments: List[Comment]) -> str:
+    md = f"## {perspective.title}\n\n"
+    md += f"{perspective.summary}\n\n"
+    md += f"**Overall Sentiment**: {perspective.sentiment}\n\n"
+
+    if perspective.viewpoints:
+        md += f"### Key Viewpoints(on {len(comments)} comments)\n\n"
+        for vp in perspective.viewpoints:
+            md += f"- {vp.statement} _(~{vp.support_percentage:.0f}% support)_\n"
+
+    return md
+
+
+def items_to_md(title: str, now: datetime, items: List[Item]) -> str:
+    sections = []
+    sections.append(f"# {title}\n\n")
+    sections.append(f"_Generated at {now.isoformat()}_\n\n")
+
+    for item in items:
+        sections.append(f"## [{item.title}]({item.url})\n\n")
+
+        if item.ai_summary:
+            sections.append(f"{item.ai_summary}\n\n")
+
+        if item.ai_perspective:
+            sections.append(perspective_to_md(item.ai_perspective, item.comments))
+
+        sections.append("---\n\n")
+
+    return "\n".join(sections)
 
 
 async def transform_items(items: List[Item]) -> List[Item]:

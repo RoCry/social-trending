@@ -64,4 +64,4 @@ class BaseCrawler:
             return self._fetch_with_jina(url)
         except Exception as e:
             logger.warning(f"Jina.ai failed for {url}: {str(e)}")
-            return None 
+            return None

@@ -35,6 +35,10 @@ class Item(BaseModel):
 
     # AI generated fields
     ai_summary: Optional[str] = Field(None, description="Content summary")
-    generated_at_comment_count: Optional[int] = Field(None, description="Comment count when AI generated")
+    generated_at_comment_count: Optional[int] = Field(
+        None, description="Comment count when AI generated"
+    )
     ai_perspective: Optional[Perspective] = None
-    perspective_md: Optional[str] = Field(None, description="Markdown version of the perspective") 
+    perspective_md: Optional[str] = Field(
+        None, description="Markdown version of the perspective"
+    )

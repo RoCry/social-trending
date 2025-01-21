@@ -1,18 +1,19 @@
 import asyncio
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, UTC
 from crawlers.hn import HackerNewsCrawler
-from transformer import transform_items
+from transformer import transform_items, items_to_md
 from db import Database
 from utils import logger
 from models import Item
 import dotenv
+import os
 
 dotenv.load_dotenv()
-import os
-print(os.getenv("DEEPSEEK_API_KEY"))
 
 
-async def merge_with_cache(db: Database, now: datetime, new_items: list[Item]) -> list[Item]:
+async def merge_with_cache(
+    db: Database, now: datetime, new_items: list[Item]
+) -> list[Item]:
     merged = []
     for new_item in new_items:
         exist_item = await db.get_item(new_item.id)
@@ -50,12 +51,20 @@ async def main():
 
     # 2. Transform and enhance with AI
     logger.info("Transforming stories with AI analysis...")
-    transformed = await transform_items(items)
+    items = await transform_items(items)
 
     # 3. Save to database
-    for story in transformed:
-        await db.upsert_item(story)
-    logger.info(f"Saved {len(transformed)} stories to database")
+    for item in items:
+        await db.upsert_item(item)
+    logger.info(f"Saved {len(items)} stories to database")
+
+    # 4. Generate markdown file
+    logger.info("Generating markdown file...")
+    md_content = items_to_md("HackerNews Top Stories", now, items)
+    os.makedirs("cache", exist_ok=True)
+    with open("cache/hackernews.md", "w", encoding="utf-8") as f:
+        f.write(md_content)
+    logger.info("Generated markdown file at cache/hackernews.md")
 
 
 if __name__ == "__main__":
