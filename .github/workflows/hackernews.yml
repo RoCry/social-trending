@@ -36,7 +36,10 @@ jobs:
         key: hackernews-cache-${{ github.run_id }}
         restore-keys: |
           hackernews-cache-
-    
+    - name: Set NOW variable
+      id: set_now
+      run: |
+        echo "NOW=$(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M:%S %z')" >> $GITHUB_ENV
     - name: Run crawler
       env:
         DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
@@ -53,7 +56,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        name: "HackerNews Top Stories (${{ github.event.repository.updated_at }})"
+        name: "HN TOP ${{ env.NOW }}"
         tag_name: latest
         body_path: cache/hackernews.md
         files: |
