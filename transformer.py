@@ -77,7 +77,7 @@ async def _transform_item_if_needed(item: Item) -> Item:
         # already generated, check if comments changed a lot
         if item.generated_at_comment_count is not None:
             comment_diff = abs(item.generated_at_comment_count - len(item.comments))
-            if comment_diff <= 5:
+            if comment_diff <= 5 or comment_diff / len(item.comments) <= 0.1:
                 logger.info(
                     f"Skipping ai generation for '{item.title}' with comment count {len(item.comments)} (last generated at {item.generated_at_comment_count})"
                 )
