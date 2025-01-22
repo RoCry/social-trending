@@ -53,7 +53,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        name: "HackerNews Top Stories"
+        name: "HackerNews Top Stories (${{ github.event.repository.updated_at }})"
         tag_name: latest
         body_path: cache/hackernews.md
         files: |

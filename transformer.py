@@ -144,10 +144,8 @@ def perspective_to_md(perspective: Perspective, comments: List[Comment]) -> str:
     return "\n".join(sections)
 
 
-def items_to_md(title: str, now: datetime, items: List[Item]) -> str:
+def items_to_md(now: datetime, items: List[Item]) -> str:
     sections = []
-    sections.append(f"# {title}\n")
-    sections.append(f"_Generated at {now.isoformat()}_\n")
 
     for item in items:
         sections.append(f"## [{item.title}]({item.url})\n\n")

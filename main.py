@@ -63,15 +63,15 @@ async def main():
     # 4. Generate markdown and JSON files
     logger.info("Generating output files...")
     os.makedirs("cache", exist_ok=True)
-    
+
     # Generate markdown file
-    md_content = items_to_md("HackerNews Top Stories", now, items)
+    md_content = items_to_md(now, items)
     with open("cache/hackernews.md", "w", encoding="utf-8") as f:
         f.write(md_content)
     logger.info("Generated markdown file at cache/hackernews.md")
-    
+
     # Generate JSON file
-    json_content = [item.model_dump(mode='json') for item in items]
+    json_content = [item.model_dump(mode="json") for item in items]
     with open("cache/hackernews.json", "w", encoding="utf-8") as f:
         json.dump(json_content, f, indent=2, ensure_ascii=False)
     logger.info("Generated JSON file at cache/hackernews.json")
