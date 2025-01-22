@@ -79,7 +79,7 @@ async def _transform_item_if_needed(item: Item) -> Item:
             comment_diff = abs(item.generated_at_comment_count - len(item.comments))
             if comment_diff <= 5:
                 logger.info(
-                    f"Skipping ai generation for '{item.title}' with comment count {len(item.comments)}"
+                    f"Skipping ai generation for '{item.title}' with comment count {len(item.comments)} (last generated at {item.generated_at_comment_count})"
                 )
                 return item
 

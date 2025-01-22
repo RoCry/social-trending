@@ -7,6 +7,7 @@ from utils import logger
 from models import Item
 import dotenv
 import os
+import json
 
 dotenv.load_dotenv()
 
@@ -59,13 +60,21 @@ async def main():
         await db.upsert_item(item)
     logger.info(f"Saved {len(items)} stories to database")
 
-    # 4. Generate markdown file
-    logger.info("Generating markdown file...")
-    md_content = items_to_md("HackerNews Top Stories", now, items)
+    # 4. Generate markdown and JSON files
+    logger.info("Generating output files...")
     os.makedirs("cache", exist_ok=True)
+    
+    # Generate markdown file
+    md_content = items_to_md("HackerNews Top Stories", now, items)
     with open("cache/hackernews.md", "w", encoding="utf-8") as f:
         f.write(md_content)
     logger.info("Generated markdown file at cache/hackernews.md")
+    
+    # Generate JSON file
+    json_content = [item.model_dump(mode='json') for item in items]
+    with open("cache/hackernews.json", "w", encoding="utf-8") as f:
+        json.dump(json_content, f, indent=2, ensure_ascii=False)
+    logger.info("Generated JSON file at cache/hackernews.json")
 
 
 if __name__ == "__main__":
