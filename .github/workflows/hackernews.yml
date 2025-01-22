@@ -5,7 +5,7 @@ on:
     branches:
       - master
   schedule:
-    - cron: '*/15 * * * *'  # Run every 15 minutes
+    - cron: '*/15 15-23,0-14 * * *'  # Run every 15 minutes from 7:00 to 00:00 (UTC+8)
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
