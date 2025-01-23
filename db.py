@@ -71,7 +71,7 @@ class Database:
                     return Item.model_validate_json(row[0])
         return None
 
-    async def cleanup(self, before_days: int = 30) -> int:
+    async def cleanup(self, before_days: int = 180) -> int:
         """Delete items older than specified days. Returns number of items deleted."""
         cutoff_date = datetime.now(UTC) - timedelta(days=before_days)
 

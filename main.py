@@ -36,7 +36,7 @@ async def main():
     db = Database(db_path)
     await db.init()
 
-    # Clean up old items (keep last 30 days)
+    # Clean up old items
     await db.cleanup()
 
     now = datetime.now(tz=UTC)
