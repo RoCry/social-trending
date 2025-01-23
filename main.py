@@ -44,7 +44,7 @@ async def main():
     # Fetch stories
     logger.info("Fetching stories from Hacker News...")
     crawler = HackerNewsCrawler()
-    top_n = os.getenv("HN_COUNT", 10)
+    top_n = os.getenv("HN_COUNT", 30)
     items = await crawler.fetch_top_stories(db_path, count=int(top_n))
 
     # Merge with cache
