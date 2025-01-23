@@ -11,7 +11,8 @@ async def _generate_perspective(
 ) -> Perspective:
     """Generate AI perspective on the content and comments."""
     logger.info(f"Generating perspective for '{title}'")
-    comments_text = "\n".join([f"- {c.author}: {c.content}" for c in comments])
+    # simply truncate comments to 500 characters
+    comments_text = "\n".join([f"- {c.author}: {c.content[:500]}" for c in comments])
 
     prompt = f"""
 Title: {title}
