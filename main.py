@@ -51,14 +51,10 @@ async def main():
     logger.info("Merging with cached items...")
     items = await merge_with_cache(db, now, items)
 
-    # 2. Transform and enhance with AI
+    # 2. Transform and enhance with AI, with progressive save
     logger.info("Transforming stories with AI analysis...")
-    items = await transform_items(items)
-
-    # 3. Save to database
-    for item in items:
-        await db.upsert_item(item)
-    logger.info(f"Saved {len(items)} stories to database")
+    items = await transform_items(items, db=db)
+    logger.info(f"Completed transforming {len(items)} stories")
 
     # 4. Generate markdown and JSON files
     logger.info("Generating output files...")

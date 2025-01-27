@@ -163,10 +163,17 @@ def items_to_md(now: datetime, items: List[Item]) -> str:
     return "\n".join(sections)
 
 
-async def transform_items(items: List[Item]) -> List[Item]:
-    """Transform multiple items in parallel."""
+async def transform_items(items: List[Item], db: Database | None = None) -> List[Item]:
+    """Transform multiple items in parallel and optionally save to database progressively."""
     transformed = []
     for item in items:
-        transformed_item = await _transform_item_if_needed(item)
-        transformed.append(transformed_item)
+        try:
+            transformed_item = await _transform_item_if_needed(item)
+            if db:
+                await db.upsert_item(transformed_item)
+                logger.info(f"Saved transformed item '{transformed_item.title}' to database")
+            transformed.append(transformed_item)
+        except Exception as e:
+            logger.error(f"Failed to transform item '{item.title}': {str(e)}")
+            transformed.append(item)  # Keep the original item on failure
     return transformed
