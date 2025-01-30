@@ -4,7 +4,7 @@ from utils import logger
 import json
 from models import Item, Perspective, Comment
 from datetime import datetime
-
+from db import Database
 
 async def _generate_perspective(
     title: str, content: str | None, comments: list[dict]
@@ -64,6 +64,7 @@ Output the final result in this exact format:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt},
         ],
+        api_base="https://api.deepseek.com",
     )
 
     perspective_data = json.loads(response.choices[0].message.content)
@@ -116,6 +117,7 @@ Please provide a concise one-paragraph summary of the above content."""
         summary_response = await litellm.acompletion(
             model="deepseek/deepseek-chat",
             messages=[{"role": "user", "content": summary_prompt}],
+            api_base="https://api.deepseek.com",
         )
         item.ai_summary = summary_response.choices[0].message.content
 
@@ -163,15 +165,16 @@ def items_to_md(now: datetime, items: List[Item]) -> str:
     return "\n".join(sections)
 
 
-async def transform_items(items: List[Item], db: Database | None = None) -> List[Item]:
+async def transform_items(items: List[Item], db: Database) -> List[Item]:
     """Transform multiple items in parallel and optionally save to database progressively."""
     transformed = []
     for item in items:
         try:
             transformed_item = await _transform_item_if_needed(item)
-            if db:
-                await db.upsert_item(transformed_item)
-                logger.info(f"Saved transformed item '{transformed_item.title}' to database")
+            await db.upsert_item(transformed_item)
+            logger.info(
+                f"Saved transformed item '{transformed_item.title}' to database"
+            )
             transformed.append(transformed_item)
         except Exception as e:
             logger.error(f"Failed to transform item '{item.title}': {str(e)}")
