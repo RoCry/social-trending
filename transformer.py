@@ -5,7 +5,7 @@ import json
 from models import Item, Perspective, Comment
 from datetime import datetime
 from db import Database
-
+from typing import Optional
 
 async def _generate_perspective(
     title: str, content: str | None, comments: list[dict]
@@ -167,10 +167,10 @@ def items_to_md(now: datetime, items: List[Item]) -> str:
 
 
 def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
-    def generate_content(item: Item) -> str:
+    def _generate_content_text(item: Item) -> Optional[str]:
         # Plain text version without formatting
-        content = item.ai_summary or item.content or ""
-        if item.ai_perspective:
+        content = item.ai_summary
+        if content and item.ai_perspective:
             content += "\n\nAI Perspective:\n"
             content += f"Title: {item.ai_perspective.title}\n"
             content += f"Summary: {item.ai_perspective.summary}\n"
@@ -181,7 +181,36 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
                     content += f"- {vp.statement} ({vp.support_percentage}%)\n"
         return content
 
-    return {
+    def _item_to_json_item(item: Item) -> Optional[dict]:
+        text = _generate_content_text(item)
+        if not text:    
+            return None
+        return {
+            "id": item.id,
+            "url": item.url,
+            "title": item.title,
+            "content_text": text,
+            # HTML version needs more raw data to improve the styling, let skip it for now
+            # "content_html": generate_html_content(item),
+            "date_published": (
+                item.published_at.isoformat()
+                if item.published_at
+                else item.created_at.isoformat()
+            ),
+            "date_modified": item.updated_at.isoformat(),
+            "authors": (
+                [{"name": comment.author} for comment in item.comments[:1]]
+                if item.comments
+                else None
+            ),
+            "tags": ["hackernews", "tech", "news"],
+            # "_hn_comments": [
+            #     {"text": comment.content, "author": comment.author}
+            #     for comment in item.comments
+            # ],
+        }
+
+    feed = {
         "version": "https://jsonfeed.org/version/1.1",
         "title": "Social Trending - Hacker News",
         "home_page_url": "https://news.ycombinator.com/",
@@ -194,34 +223,13 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
             }
         ],
         "language": "en-US",
-        "items": [
-            {
-                "id": item.id,
-                "url": item.url,
-                "title": item.title,
-                "content_text": generate_content(item),
-                # HTML version needs more raw data to improve the styling, let skip it for now
-                # "content_html": generate_html_content(item),
-                "date_published": (
-                    item.published_at.isoformat()
-                    if item.published_at
-                    else item.created_at.isoformat()
-                ),
-                "date_modified": item.updated_at.isoformat(),
-                "authors": (
-                    [{"name": comment.author} for comment in item.comments[:1]]
-                    if item.comments
-                    else None
-                ),
-                "tags": ["hackernews", "tech", "news"],
-                # "_hn_comments": [
-                #     {"text": comment.content, "author": comment.author}
-                #     for comment in item.comments
-                # ],
-            }
-            for item in items
-        ],
+        "items": [],
     }
+    for item in items:
+        json_item = _item_to_json_item(item)
+        if json_item:
+            feed["items"].append(json_item)
+    return feed
 
 
 async def transform_items(items: List[Item], db: Database) -> List[Item]:
