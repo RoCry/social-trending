@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime, UTC
 from crawlers.hn import HackerNewsCrawler
-from transformer import transform_items, items_to_md
+from transformer import transform_items, items_to_md, items_to_json_feed
 from db import Database
 from utils import logger
 from models import Item
@@ -29,53 +29,6 @@ async def merge_with_cache(
         exist_item.updated_at = now
         merged.append(exist_item)
     return merged
-
-
-def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
-    """Convert items to JSON Feed v1.1 format."""
-
-    # generate the content_text
-    content_text = ""
-
-    return {
-        "version": "https://jsonfeed.org/version/1.1",
-        "title": "Social Trending - Hacker News",
-        "home_page_url": "https://news.ycombinator.com/",
-        "feed_url": "https://github.com/RoCry/social-trending/releases/download/latest/hackernews.rss.json",
-        "description": "Top stories from Hacker News with AI-powered analysis",
-        "authors": [
-            {
-                "name": "Social Trending Bot",
-                "url": "https://github.com/RoCry/social-trending",
-            }
-        ],
-        "language": "en-US",
-        "items": [
-            {
-                "id": item.id,
-                "url": item.url,
-                "title": item.title,
-                "content_text": content_text,
-                "date_published": (
-                    item.published_at.isoformat()
-                    if item.published_at
-                    else item.created_at.isoformat()
-                ),
-                "date_modified": item.updated_at.isoformat(),
-                "authors": (
-                    [{"name": comment.author} for comment in item.comments[:1]]
-                    if item.comments
-                    else None
-                ),
-                "tags": ["hackernews", "tech", "news"],
-                # "_hn_comments": [
-                #     {"text": comment.content, "author": comment.author}
-                #     for comment in item.comments
-                # ],
-            }
-            for item in items
-        ],
-    }
 
 
 async def main():

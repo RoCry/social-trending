@@ -165,6 +165,81 @@ def items_to_md(now: datetime, items: List[Item]) -> str:
     return "\n".join(sections)
 
 
+def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
+    def generate_content(item: Item) -> str:
+        # Plain text version without formatting
+        content = item.ai_summary or item.content or ""
+        if item.ai_perspective:
+            content += "\n\nAI Perspective:\n"
+            content += f"Title: {item.ai_perspective.title}\n"
+            content += f"Summary: {item.ai_perspective.summary}\n"
+            content += f"Sentiment: {item.ai_perspective.sentiment}\n"
+            if item.ai_perspective.viewpoints:
+                content += "Viewpoints:\n"
+                for vp in item.ai_perspective.viewpoints:
+                    content += f"- {vp.statement} ({vp.support_percentage}%)\n"
+        return content
+
+    def generate_html_content(item: Item) -> str:
+        # HTML formatted version for better styling
+        summary = item.ai_summary or item.content or ""
+        html = f"<p>{summary}</p>"
+        if item.ai_perspective:
+            html += "<h3>AI Perspective:</h3>"
+            html += f"<p><strong>Title:</strong> {item.ai_perspective.title}</p>"
+            html += f"<p><strong>Summary:</strong> {item.ai_perspective.summary}</p>"
+            html += (
+                f"<p><strong>Sentiment:</strong> {item.ai_perspective.sentiment}</p>"
+            )
+            if item.ai_perspective.viewpoints:
+                html += "<ul>"
+                for vp in item.ai_perspective.viewpoints:
+                    html += f"<li>{vp.statement} ({vp.support_percentage}%)</li>"
+                html += "</ul>"
+        return html
+
+    return {
+        "version": "https://jsonfeed.org/version/1.1",
+        "title": "Social Trending - Hacker News",
+        "home_page_url": "https://news.ycombinator.com/",
+        "feed_url": "https://github.com/RoCry/social-trending/releases/download/latest/hackernews.rss.json",
+        "description": "Top stories from Hacker News with AI-powered analysis",
+        "authors": [
+            {
+                "name": "Social Trending Bot",
+                "url": "https://github.com/RoCry/social-trending",
+            }
+        ],
+        "language": "en-US",
+        "items": [
+            {
+                "id": item.id,
+                "url": item.url,
+                "title": item.title,
+                "content_text": generate_content(item),
+                "content_html": generate_html_content(item),
+                "date_published": (
+                    item.published_at.isoformat()
+                    if item.published_at
+                    else item.created_at.isoformat()
+                ),
+                "date_modified": item.updated_at.isoformat(),
+                "authors": (
+                    [{"name": comment.author} for comment in item.comments[:1]]
+                    if item.comments
+                    else None
+                ),
+                "tags": ["hackernews", "tech", "news"],
+                # "_hn_comments": [
+                #     {"text": comment.content, "author": comment.author}
+                #     for comment in item.comments
+                # ],
+            }
+            for item in items
+        ],
+    }
+
+
 async def transform_items(items: List[Item], db: Database) -> List[Item]:
     """Transform multiple items in parallel and optionally save to database progressively."""
     transformed = []
