@@ -8,6 +8,7 @@ from models import Item
 import dotenv
 import os
 import json
+from typing import List
 
 dotenv.load_dotenv()
 
@@ -28,6 +29,52 @@ async def merge_with_cache(
         exist_item.updated_at = now
         merged.append(exist_item)
     return merged
+
+
+def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
+    """Convert items to JSON Feed v1.1 format."""
+    return {
+        "version": "https://jsonfeed.org/version/1.1",
+        "title": "Social Trending - Hacker News",
+        "home_page_url": "https://news.ycombinator.com/",
+        "feed_url": "https://github.com/RoCry/social-trending/releases/download/latest/hackernews.rss.json",
+        "description": "Top stories from Hacker News with AI-powered analysis",
+        "authors": [
+            {
+                "name": "Social Trending Bot",
+                "url": "https://github.com/RoCry/social-trending",
+            }
+        ],
+        "language": "en-US",
+        "items": [
+            {
+                "id": item.id,
+                "url": item.url,
+                "title": item.title,
+                "content_text": (
+                    f"{item.ai_summary}\n\n"
+                    f"AI Perspective:\n{item.perspective_md if item.perspective_md else ''}"
+                ),
+                "date_published": (
+                    item.published_at.isoformat()
+                    if item.published_at
+                    else item.created_at.isoformat()
+                ),
+                "date_modified": item.updated_at.isoformat(),
+                "authors": (
+                    [{"name": comment.author} for comment in item.comments[:1]]
+                    if item.comments
+                    else None
+                ),
+                "tags": ["hackernews", "tech", "news"],
+                # "_hn_comments": [
+                #     {"text": comment.content, "author": comment.author}
+                #     for comment in item.comments
+                # ],
+            }
+            for item in items
+        ],
+    }
 
 
 async def main():
@@ -59,6 +106,12 @@ async def main():
     # 4. Generate markdown and JSON files
     logger.info("Generating output files...")
     os.makedirs("cache", exist_ok=True)
+
+    # Generate JSON Feed file
+    json_feed = items_to_json_feed(now, items)
+    with open("cache/hackernews.rss.json", "w", encoding="utf-8") as f:
+        json.dump(json_feed, f, indent=2, ensure_ascii=False)
+    logger.info("Generated JSON Feed file at cache/hackernews.rss.json")
 
     # Generate markdown file
     md_content = items_to_md(now, items)
