@@ -27,8 +27,7 @@ final data structure will be like:
                 "support_percentage": approximate percentage
             }
         ]
-    },
-    "perspective_md": "the markdown of the perspective", // optional, based on the perspective
+    }
 }
 ```
 

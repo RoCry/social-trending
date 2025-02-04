@@ -39,6 +39,3 @@ class Item(BaseModel):
         None, description="Comment count when AI generated"
     )
     ai_perspective: Optional[Perspective] = None
-    perspective_md: Optional[str] = Field(
-        None, description="Markdown version of the perspective"
-    )

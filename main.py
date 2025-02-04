@@ -33,6 +33,10 @@ async def merge_with_cache(
 
 def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
     """Convert items to JSON Feed v1.1 format."""
+
+    # generate the content_text
+    content_text = ""
+
     return {
         "version": "https://jsonfeed.org/version/1.1",
         "title": "Social Trending - Hacker News",
@@ -51,10 +55,7 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
                 "id": item.id,
                 "url": item.url,
                 "title": item.title,
-                "content_text": (
-                    f"{item.ai_summary}\n\n"
-                    f"AI Perspective:\n{item.perspective_md if item.perspective_md else ''}"
-                ),
+                "content_text": content_text,
                 "date_published": (
                     item.published_at.isoformat()
                     if item.published_at
