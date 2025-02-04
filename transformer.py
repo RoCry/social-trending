@@ -6,6 +6,7 @@ from models import Item, Perspective, Comment
 from datetime import datetime
 from db import Database
 
+
 async def _generate_perspective(
     title: str, content: str | None, comments: list[dict]
 ) -> Perspective:
@@ -180,24 +181,6 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
                     content += f"- {vp.statement} ({vp.support_percentage}%)\n"
         return content
 
-    def generate_html_content(item: Item) -> str:
-        # HTML formatted version for better styling
-        summary = item.ai_summary or item.content or ""
-        html = f"<p>{summary}</p>"
-        if item.ai_perspective:
-            html += "<h3>AI Perspective:</h3>"
-            html += f"<p><strong>Title:</strong> {item.ai_perspective.title}</p>"
-            html += f"<p><strong>Summary:</strong> {item.ai_perspective.summary}</p>"
-            html += (
-                f"<p><strong>Sentiment:</strong> {item.ai_perspective.sentiment}</p>"
-            )
-            if item.ai_perspective.viewpoints:
-                html += "<ul>"
-                for vp in item.ai_perspective.viewpoints:
-                    html += f"<li>{vp.statement} ({vp.support_percentage}%)</li>"
-                html += "</ul>"
-        return html
-
     return {
         "version": "https://jsonfeed.org/version/1.1",
         "title": "Social Trending - Hacker News",
@@ -217,7 +200,8 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
                 "url": item.url,
                 "title": item.title,
                 "content_text": generate_content(item),
-                "content_html": generate_html_content(item),
+                # HTML version needs more raw data to improve the styling, let skip it for now
+                # "content_html": generate_html_content(item),
                 "date_published": (
                     item.published_at.isoformat()
                     if item.published_at
