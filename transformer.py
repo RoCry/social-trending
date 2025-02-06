@@ -203,8 +203,10 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
         # Main summary
         if item.ai_summary:
             html_parts.append(f"<p>{item.ai_summary}</p>")
-        else:
+        elif item.content_html:
             html_parts.append(item.content_html)
+        elif item.content:
+            html_parts.append(f"<p>{item.content}</p>")
 
         if item.ai_perspective:
             # AI Perspective section
