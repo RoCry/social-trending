@@ -25,6 +25,7 @@ class Item(BaseModel):
     title: str
     url: str = Field(description="HN/Reddit URL, not the original URL")
     content: Optional[str] = Field(None, description="The original source content")
+    content_html: Optional[str] = Field(None, description="The original source content in HTML format")
     comments: List[Comment] = Field(default_factory=list)
     published_at: Optional[datetime] = None
 

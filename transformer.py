@@ -179,6 +179,9 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
     def _generate_content_text(item: Item) -> Optional[str]:
         # Plain text version without formatting
         content = item.ai_summary
+        if not content:
+            content = item.content
+
         if content and item.ai_perspective:
             content += "\n\nAI Perspective:\n"
             content += f"Title: {item.ai_perspective.title}\n"
@@ -188,16 +191,20 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
                 content += "Viewpoints:\n"
                 for vp in item.ai_perspective.viewpoints:
                     content += f"- {vp.statement} ({vp.support_percentage}%)\n"
+        else:
+            content += "\n\nComments:\n"
+            for comment in item.comments:
+                content += f"{comment.author}: {comment.content}\n"
         return content
 
     def _generate_content_html(item: Item) -> Optional[str]:
-        if not item.ai_summary:
-            return None
-
         html_parts = []
 
         # Main summary
-        html_parts.append(f"<p>{item.ai_summary}</p>")
+        if item.ai_summary:
+            html_parts.append(f"<p>{item.ai_summary}</p>")
+        else:
+            html_parts.append(item.content_html)
 
         if item.ai_perspective:
             # AI Perspective section
@@ -218,6 +225,12 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
                         f"<li>{vp.statement} <em>({vp.support_percentage:.0f}%)</em></li>"
                     )
                 html_parts.append("</ul>")
+        else:
+            html_parts.append("<h4>Comments</h4>")
+            html_parts.append("<ul>")
+            for comment in item.comments:
+                html_parts.append(f"<li>{comment.author}: {comment.content}</li>")
+            html_parts.append("</ul>")
 
         return "\n".join(html_parts)
 
@@ -226,15 +239,16 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
         html = _generate_content_html(item)
         if not text and not html:
             return None
+        summary = item.ai_perspective.title if item.ai_perspective else item.ai_summary
+        if not summary:
+            summary = item.content.split("\n")[:3]
         return {
             "id": item.id,
             "url": item.url,
             "title": item.title,
             "content_text": text,
             "content_html": html,
-            "summary": item.ai_perspective.title
-            if item.ai_perspective
-            else item.ai_summary,
+            "summary": summary,
             "date_published": (
                 item.published_at.isoformat()
                 if item.published_at
@@ -246,7 +260,7 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
                 if item.comments
                 else None
             ),
-            "tags": ["hackernews", "tech", "news"],
+            "tags": ["hackernews"],
             # "_hn_comments": [
             #     {"text": comment.content, "author": comment.author}
             #     for comment in item.comments

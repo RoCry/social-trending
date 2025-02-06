@@ -20,8 +20,9 @@ class HackerNewsCrawler(BaseCrawler):
             for story in resp.stories:
                 # Extract content if URL exists
                 content = None
+                content_html = None
                 if story.url:
-                    content = self.fetch_url(story.url)
+                    content, content_html = self.fetch_url(story.url)
 
                 # Transform comments to list
                 comments = [
@@ -34,6 +35,7 @@ class HackerNewsCrawler(BaseCrawler):
                     title=story.title,
                     url=f"https://news.ycombinator.com/item?id={story.id}",
                     content=content,
+                    content_html=content_html,
                     comments=comments,
                     published_at=story.time,
                     id=str(story.id),
