@@ -67,6 +67,7 @@ Output the final result in this exact format:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt},
         ],
+        base_url=os.getenv("LITELLM_BASE_URL") or None,
     )
 
     perspective_data = json.loads(response.choices[0].message.content)
@@ -119,6 +120,7 @@ Please provide a concise one-paragraph summary of the above content."""
         summary_response = await litellm.acompletion(
             model=os.getenv("LITELLM_MODEL"),
             messages=[{"role": "user", "content": summary_prompt}],
+            base_url=os.getenv("LITELLM_BASE_URL") or None,
         )
         item.ai_summary = summary_response.choices[0].message.content
 
