@@ -7,6 +7,7 @@ from datetime import datetime
 from db import Database
 from typing import Optional
 
+
 async def _generate_perspective(
     title: str, content: str | None, comments: list[dict]
 ) -> Perspective:
@@ -181,17 +182,49 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
                     content += f"- {vp.statement} ({vp.support_percentage}%)\n"
         return content
 
+    def _generate_content_html(item: Item) -> Optional[str]:
+        if not item.ai_summary:
+            return None
+
+        html_parts = []
+
+        # Main summary
+        html_parts.append(f"<p>{item.ai_summary}</p>")
+
+        if item.ai_perspective:
+            # AI Perspective section
+            html_parts.append("<h2>AI Perspective</h2>")
+            html_parts.append(f"<h3>{item.ai_perspective.title}</h3>")
+            html_parts.append(
+                f"<p><strong>Summary:</strong> {item.ai_perspective.summary}</p>"
+            )
+            html_parts.append(
+                f"<p><strong>Overall Sentiment:</strong> {item.ai_perspective.sentiment}</p>"
+            )
+
+            if item.ai_perspective.viewpoints:
+                html_parts.append("<h4>Key Viewpoints</h4>")
+                html_parts.append("<ul>")
+                for vp in item.ai_perspective.viewpoints:
+                    html_parts.append(
+                        f"<li>{vp.statement} <em>({vp.support_percentage:.0f}%)</em></li>"
+                    )
+                html_parts.append("</ul>")
+
+        return "\n".join(html_parts)
+
     def _item_to_json_item(item: Item) -> Optional[dict]:
         text = _generate_content_text(item)
-        if not text:    
+        html = _generate_content_html(item)
+        if not text and not html:
             return None
         return {
             "id": item.id,
             "url": item.url,
             "title": item.title,
             "content_text": text,
-            # HTML version needs more raw data to improve the styling, let skip it for now
-            # "content_html": generate_html_content(item),
+            "content_html": html,
+            "summary": item.ai_summary,
             "date_published": (
                 item.published_at.isoformat()
                 if item.published_at
