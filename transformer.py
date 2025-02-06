@@ -99,11 +99,15 @@ async def _transform_item_if_needed(item: Item) -> Item:
         len(item.comments) >= MIN_COMMENTS_FOR_PERSPECTIVE
         and item.ai_perspective is None
     ):
-        perspective = await _generate_perspective(
-            item.title, item.content, item.comments
-        )
-        item.ai_perspective = perspective
-        item.generated_at_comment_count = len(item.comments)
+        # the llm api is not reliable, just ignore it for now
+        try:
+            perspective = await _generate_perspective(
+                item.title, item.content, item.comments
+            )
+            item.ai_perspective = perspective
+            item.generated_at_comment_count = len(item.comments)
+        except Exception as e:
+            logger.error(f"Failed to generate perspective for '{item.title}': {str(e)}")
     elif len(item.comments) > 0 and len(item.comments) < MIN_COMMENTS_FOR_PERSPECTIVE:
         logger.info(
             f"Skipping perspective generation for '{item.title}' due to insufficient comments ({len(item.comments)})"
@@ -117,12 +121,15 @@ Content: {item.content}
 
 Please provide a concise one-paragraph summary of the above content."""
 
-        summary_response = await litellm.acompletion(
-            model=os.getenv("LITELLM_MODEL"),
-            messages=[{"role": "user", "content": summary_prompt}],
-            base_url=os.getenv("LITELLM_BASE_URL") or None,
-        )
-        item.ai_summary = summary_response.choices[0].message.content
+        try:
+            summary_response = await litellm.acompletion(
+                model=os.getenv("LITELLM_MODEL"),
+                messages=[{"role": "user", "content": summary_prompt}],
+                base_url=os.getenv("LITELLM_BASE_URL") or None,
+            )
+            item.ai_summary = summary_response.choices[0].message.content
+        except Exception as e:
+            logger.error(f"Failed to generate summary for '{item.title}': {str(e)}")
 
     return item
 
