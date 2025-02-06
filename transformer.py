@@ -2,6 +2,7 @@ from typing import List
 import litellm
 from utils import logger
 import json
+import os
 from models import Item, Perspective, Comment
 from datetime import datetime
 from db import Database
@@ -61,12 +62,11 @@ Output the final result in this exact format:
 }"""
 
     response = await litellm.acompletion(
-        model="deepseek/deepseek-chat",
+        model=os.getenv("LITELLM_MODEL"),
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt},
         ],
-        api_base="https://api.deepseek.com",
     )
 
     perspective_data = json.loads(response.choices[0].message.content)
@@ -117,9 +117,8 @@ Content: {item.content}
 Please provide a concise one-paragraph summary of the above content."""
 
         summary_response = await litellm.acompletion(
-            model="deepseek/deepseek-chat",
+            model=os.getenv("LITELLM_MODEL"),
             messages=[{"role": "user", "content": summary_prompt}],
-            api_base="https://api.deepseek.com",
         )
         item.ai_summary = summary_response.choices[0].message.content
 

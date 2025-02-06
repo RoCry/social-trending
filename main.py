@@ -11,6 +11,7 @@ import json
 from typing import List
 
 dotenv.load_dotenv()
+logger.debug(f"Using LITELLM_MODEL: {os.getenv('LITELLM_MODEL')}")
 
 
 async def merge_with_cache(
