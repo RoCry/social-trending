@@ -224,7 +224,9 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
             "title": item.title,
             "content_text": text,
             "content_html": html,
-            "summary": item.ai_summary,
+            "summary": item.ai_perspective.title
+            if item.ai_perspective
+            else item.ai_summary,
             "date_published": (
                 item.published_at.isoformat()
                 if item.published_at
