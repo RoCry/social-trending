@@ -247,7 +247,10 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
             return None
         summary = item.ai_perspective.title if item.ai_perspective else item.ai_summary
         if not summary:
-            summary = item.content.split("\n")[:3]
+            if item.content:
+                summary = item.content.split("\n")[:3]
+            else:
+                summary = f"No summary available for {item.url}"
         return {
             "id": item.id,
             "url": item.url,
