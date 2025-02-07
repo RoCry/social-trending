@@ -235,7 +235,7 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
             html_parts.append("<h4>Comments</h4>")
             html_parts.append("<ul>")
             for comment in item.comments:
-                html_parts.append(f"<li>{comment.author}: {comment.content}</li>")
+                html_parts.append(f"<li><em>{comment.author}</em>: {comment.content}</li>")
             html_parts.append("</ul>")
 
         return "\n".join(html_parts)
