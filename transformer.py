@@ -181,6 +181,8 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
         content = item.ai_summary
         if not content:
             content = item.content
+        if not content:
+            content = f"No content available for {item.url}"
 
         if content and item.ai_perspective:
             content += "\n\nAI Perspective:\n"
@@ -207,6 +209,8 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
             html_parts.append(item.content_html)
         elif item.content:
             html_parts.append(f"<p>{item.content}</p>")
+        else:
+            html_parts.append(f"<p>No content available for {item.url}</p>")
 
         if item.ai_perspective:
             # AI Perspective section
