@@ -43,12 +43,9 @@ jobs:
         echo "NOW=$(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M:%S %z')" >> $GITHUB_ENV
     - name: Run crawler
       env:
-        DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         LITELLM_MODEL: ${{ vars.LITELLM_MODEL }}
         LITELLM_BASE_URL: ${{ vars.LITELLM_BASE_URL }}
+        LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
       run: uv run main.py
     
     - name: Save cache folder
