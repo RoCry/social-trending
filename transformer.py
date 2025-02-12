@@ -68,8 +68,12 @@ Output in this exact format:
             {"role": "user", "content": prompt},
         ],
     )
-
-    perspective_data = json.loads(response.choices[0].message.content)
+    json_str = response.choices[0].message.content
+    if json_str.startswith("```json") and json_str.endswith("```"):
+        json_str = json_str[7:-3]
+    json_str = json_str.strip()
+    logger.info(f"Generated perspective: {json_str}")
+    perspective_data = json.loads(json_str)
     return Perspective(**perspective_data)
 
 
