@@ -21,11 +21,10 @@ async def merge_with_cache(
     for new_item in new_items:
         exist_item = await db.get_item(new_item.id)
         if not exist_item:
-            # no cache, just add it
             merged.append(new_item)
             continue
 
-        # we assume only the comments will change
+        # Only update comments and timestamp
         exist_item.comments = new_item.comments
         exist_item.updated_at = now
         merged.append(exist_item)
@@ -53,12 +52,12 @@ async def main():
     logger.info("Merging with cached items...")
     items = await merge_with_cache(db, now, items)
 
-    # 2. Transform and enhance with AI, with progressive save
-    logger.info("Transforming stories with AI analysis...")
+    # Transform and enhance with AI perspective
+    logger.info("Analyzing discussions with AI...")
     items = await transform_items(items, db=db)
-    logger.info(f"Completed transforming {len(items)} stories")
+    logger.info(f"Completed analyzing {len(items)} discussions")
 
-    # 4. Generate markdown and JSON files
+    # Generate output files
     logger.info("Generating output files...")
     os.makedirs("cache", exist_ok=True)
 

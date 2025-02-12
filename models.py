@@ -35,7 +35,6 @@ class Item(BaseModel):
     updated_at: datetime
 
     # AI generated fields
-    ai_summary: Optional[str] = Field(None, description="Content summary")
     generated_at_comment_count: Optional[int] = Field(
         None, description="Comment count when AI generated"
     )

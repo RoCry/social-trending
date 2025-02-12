@@ -9,49 +9,47 @@ from db import Database
 from typing import Optional
 
 
-async def _generate_perspective(
-    title: str, content: str | None, comments: list[dict]
-) -> Perspective:
-    """Generate AI perspective on the content and comments."""
+async def _generate_perspective(title: str, comments: list[Comment]) -> Perspective:
+    """Generate AI perspective based on the title and community discussion."""
     logger.info(f"Generating perspective for '{title}'")
-    # simply truncate comments to 500 characters
+    # Truncate comments to 500 characters to stay within token limits
     comments_text = "\n".join([f"- {c.author}: {c.content[:500]}" for c in comments])
 
     prompt = f"""
 Title: {title}
-Content: {content or "[No content available]"}
 Comments:
 {comments_text}
 """
 
-    system_prompt = """You are an expert social media analyst with deep understanding of community discussions.
+    # The system prompt is designed to:
+    # 1. Focus on discussion analysis rather than content interpretation
+    # 2. Identify patterns and consensus in community reactions
+    # 3. Extract meaningful insights from diverse viewpoints
+    # 4. Quantify the level of agreement/disagreement
+    system_prompt = """You are an expert social media analyst specializing in community discussion analysis.
 
-First, read through the content and comments step by step:
+Analyze the discussion following these steps:
 
-1. Content analysis:
-   - Extract main topic and key points
-   - Identify the core argument or information
+1. Comment Analysis:
+   - Group similar opinions and reactions
+   - Note recurring themes and patterns
+   - Identify key points of agreement/disagreement
 
-2. Comment analysis:
-   - Examine each comment carefully
-   - Group similar viewpoints together
-   - Note the sentiment and strength of each opinion
+2. Viewpoint Consolidation:
+   - Merge similar viewpoints (>70% overlap)
+   - Keep only distinct, well-supported perspectives
+   - Limit to maximum 5 viewpoints
+   - Calculate approximate support percentage
 
-3. Consolidation:
-   - Merge highly similar viewpoints (>70% overlap)
-   - Keep only the most representative viewpoint from each group
-   - Limit to maximum 5 distinct viewpoints
-   - Calculate approximate support percentage for each
+3. Community Sentiment:
+   - Evaluate overall tone and engagement
+   - Consider consensus vs controversy
+   - Note strength of dominant opinions
 
-4. Final synthesis:
-   - Determine overall community sentiment
-   - Find the key areas of agreement/disagreement
-   - Identify most impactful perspectives
-
-Output the final result in this exact format:
+Output in this exact format:
 {
-    "title": "concise but descriptive title",
-    "summary": "comprehensive summary in one paragraph",
+    "title": "concise title capturing main discussion theme",
+    "summary": "one paragraph capturing key discussion points and community reaction",
     "sentiment": "overall sentiment (positive/mixed/negative)",
     "viewpoints": [
         {
@@ -75,35 +73,25 @@ Output the final result in this exact format:
 
 
 async def _transform_item_if_needed(item: Item) -> Item:
-    if all(
-        k in item.model_fields_set
-        for k in ["ai_summary", "ai_perspective", "generated_at_comment_count"]
-    ):
-        # already generated, check if comments changed a lot
-        if item.generated_at_comment_count is not None:
-            comment_diff = abs(item.generated_at_comment_count - len(item.comments))
-            if comment_diff <= 5 or comment_diff / len(item.comments) <= 0.1:
-                logger.info(
-                    f"Skipping ai generation for '{item.title}' with comment count {len(item.comments)} (last generated at {item.generated_at_comment_count})"
-                )
-                return item
-
+    if item.generated_at_comment_count is not None:
+        comment_diff = abs(item.generated_at_comment_count - len(item.comments))
+        # Skip if comments haven't changed significantly (less than 5 or 10%)
+        if comment_diff <= 5 or comment_diff / len(item.comments) <= 0.1:
             logger.info(
-                f"Comments changed from {item.generated_at_comment_count} to {len(item.comments)}, regenerating perspective for '{item.title}'"
+                f"Skipping perspective generation for '{item.title}' with comment count {len(item.comments)} (last generated at {item.generated_at_comment_count})"
             )
-            item.ai_perspective = None
+            return item
+
+        logger.info(
+            f"Comments changed from {item.generated_at_comment_count} to {len(item.comments)}, regenerating perspective for '{item.title}'"
+        )
+        item.ai_perspective = None
 
     # Generate perspective if we have enough comments
     MIN_COMMENTS_FOR_PERSPECTIVE = 5
-    if (
-        len(item.comments) >= MIN_COMMENTS_FOR_PERSPECTIVE
-        and item.ai_perspective is None
-    ):
-        # the llm api is not reliable, just ignore it for now
+    if len(item.comments) >= MIN_COMMENTS_FOR_PERSPECTIVE and item.ai_perspective is None:
         try:
-            perspective = await _generate_perspective(
-                item.title, item.content, item.comments
-            )
+            perspective = await _generate_perspective(item.title, item.comments)
             item.ai_perspective = perspective
             item.generated_at_comment_count = len(item.comments)
         except Exception as e:
@@ -112,24 +100,6 @@ async def _transform_item_if_needed(item: Item) -> Item:
         logger.info(
             f"Skipping perspective generation for '{item.title}' due to insufficient comments ({len(item.comments)})"
         )
-
-    # Generate summary if we have content
-    if item.content and item.ai_summary is None:
-        logger.info(f"Generating summary for '{item.title}'")
-        summary_prompt = f"""Title: {item.title}
-Content: {item.content}
-
-Please provide a concise one-paragraph summary of the above content."""
-
-        try:
-            summary_response = await litellm.acompletion(
-                model=os.getenv("LITELLM_MODEL"),
-                messages=[{"role": "user", "content": summary_prompt}],
-                base_url=os.getenv("LITELLM_BASE_URL") or None,
-            )
-            item.ai_summary = summary_response.choices[0].message.content
-        except Exception as e:
-            logger.error(f"Failed to generate summary for '{item.title}': {str(e)}")
 
     return item
 
@@ -163,10 +133,6 @@ def items_to_md(now: datetime, items: List[Item]) -> str:
     for item in items:
         sections.append(f"## [{item.title}]({item.url})\n\n")
 
-        if item.ai_summary:
-            sections.append("<details><summary>AI Summary</summary>")
-            sections.append(f"{item.ai_summary}\n</details>\n\n")
-
         if item.ai_perspective:
             sections.append(perspective_to_md(item.ai_perspective, item.comments))
 
@@ -177,43 +143,42 @@ def items_to_md(now: datetime, items: List[Item]) -> str:
 
 def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
     def _generate_content_text(item: Item) -> Optional[str]:
-        # Plain text version without formatting
-        content = item.ai_summary
-        if not content:
-            content = item.content
-        if not content:
-            content = f"No content available for {item.url}"
-
-        if content and item.ai_perspective:
-            content += "\n\nAI Perspective:\n"
-            content += f"Title: {item.ai_perspective.title}\n"
-            content += f"Summary: {item.ai_perspective.summary}\n"
-            content += f"Sentiment: {item.ai_perspective.sentiment}\n"
+        sections = []
+        
+        # Original content section
+        if item.content:
+            sections.append(item.content)
+        
+        # AI Perspective section
+        if item.ai_perspective:
+            sections.append("\nAI Perspective:")
+            sections.append(f"Title: {item.ai_perspective.title}")
+            sections.append(f"Summary: {item.ai_perspective.summary}")
+            sections.append(f"Sentiment: {item.ai_perspective.sentiment}")
             if item.ai_perspective.viewpoints:
-                content += "Viewpoints:\n"
+                sections.append("Viewpoints:")
                 for vp in item.ai_perspective.viewpoints:
-                    content += f"- {vp.statement} ({vp.support_percentage}%)\n"
-        else:
-            content += "\n\nComments:\n"
+                    sections.append(f"- {vp.statement} ({vp.support_percentage}%)")
+        
+        # Comments section
+        if item.comments:
+            sections.append("\nComments:")
             for comment in item.comments:
-                content += f"{comment.author}: {comment.content}\n"
-        return content
+                sections.append(f"{comment.author}: {comment.content}")
+        
+        return "\n".join(sections) if sections else None
 
     def _generate_content_html(item: Item) -> Optional[str]:
         html_parts = []
 
-        # Main summary
-        if item.ai_summary:
-            html_parts.append(f"<p>{item.ai_summary}</p>")
-        elif item.content_html:
+        # Original content section
+        if item.content_html:
             html_parts.append(item.content_html)
         elif item.content:
             html_parts.append(f"<p>{item.content}</p>")
-        else:
-            html_parts.append(f"<p>No content available for {item.url}</p>")
 
+        # AI Perspective section
         if item.ai_perspective:
-            # AI Perspective section
             html_parts.append("<h2>AI Perspective</h2>")
             html_parts.append(f"<h3>{item.ai_perspective.title}</h3>")
             html_parts.append(
@@ -231,26 +196,23 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
                         f"<li>{vp.statement} <em>({vp.support_percentage:.0f}%)</em></li>"
                     )
                 html_parts.append("</ul>")
-        else:
+
+        # Comments section
+        if item.comments:
             html_parts.append("<h4>Comments</h4>")
             html_parts.append("<ul>")
             for comment in item.comments:
                 html_parts.append(f"<li><em>{comment.author}</em>: {comment.content}</li>")
             html_parts.append("</ul>")
 
-        return "\n".join(html_parts)
+        return "\n".join(html_parts) if html_parts else None
 
     def _item_to_json_item(item: Item) -> Optional[dict]:
         text = _generate_content_text(item)
         html = _generate_content_html(item)
         if not text and not html:
             return None
-        summary = item.ai_perspective.title if item.ai_perspective else item.ai_summary
-        if not summary:
-            if item.content:
-                summary = item.content.split("\n")[:3]
-            else:
-                summary = f"No summary available for {item.url}"
+        summary = item.ai_perspective.title if item.ai_perspective else item.title
         return {
             "id": item.id,
             "url": item.url,
@@ -270,10 +232,6 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
                 else None
             ),
             "tags": ["hackernews"],
-            # "_hn_comments": [
-            #     {"text": comment.content, "author": comment.author}
-            #     for comment in item.comments
-            # ],
         }
 
     feed = {
