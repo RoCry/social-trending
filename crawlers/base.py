@@ -13,7 +13,9 @@ class BaseCrawler:
         downloaded = trafilatura.fetch_url(url)
         if downloaded:
             text_result = trafilatura.extract(downloaded, include_comments=False)
-            html_result = trafilatura.extract(downloaded, include_comments=False, output_format='html')
+            html_result = trafilatura.extract(
+                downloaded, include_comments=False, output_format="html"
+            )
             if text_result:
                 logger.debug(
                     f"Trafilatura fetched {url}:\n{text_result.splitlines()[:3]}\n..."

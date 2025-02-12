@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime, UTC
 from crawlers.hn import HackerNewsCrawler
 from transformer import transform_items, items_to_md, items_to_json_feed
+from llm_utils import make_router
 from db import Database
 from utils import logger
 from models import Item
@@ -52,9 +53,11 @@ async def main():
     logger.info("Merging with cached items...")
     items = await merge_with_cache(db, now, items)
 
+    router = make_router()
+
     # Transform and enhance with AI perspective
     logger.info("Analyzing discussions with AI...")
-    items = await transform_items(items, db=db)
+    items = await transform_items(items, db=db, router=router)
     logger.info(f"Completed analyzing {len(items)} discussions")
 
     # Generate output files

@@ -1,5 +1,5 @@
 from typing import List
-import litellm
+from litellm import Router
 from utils import logger
 import json
 import os
@@ -9,7 +9,9 @@ from db import Database
 from typing import Optional
 
 
-async def _generate_perspective(title: str, comments: list[Comment]) -> Perspective:
+async def _generate_perspective(
+    title: str, comments: list[Comment], router: Router
+) -> Perspective:
     """Generate AI perspective based on the title and community discussion."""
     logger.info(f"Generating perspective for '{title}'")
     # Truncate comments to 500 characters to stay within token limits
@@ -59,20 +61,19 @@ Output in this exact format:
     ]
 }"""
 
-    response = await litellm.acompletion(
+    response = await router.acompletion(
         model=os.getenv("LITELLM_MODEL"),
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt},
         ],
-        base_url=os.getenv("LITELLM_BASE_URL") or None,
     )
 
     perspective_data = json.loads(response.choices[0].message.content)
     return Perspective(**perspective_data)
 
 
-async def _transform_item_if_needed(item: Item) -> Item:
+async def _transform_item_if_needed(item: Item, router: Router) -> Item:
     if item.generated_at_comment_count is not None:
         comment_diff = abs(item.generated_at_comment_count - len(item.comments))
         # Skip if comments haven't changed significantly (less than 5 or 10%)
@@ -89,9 +90,14 @@ async def _transform_item_if_needed(item: Item) -> Item:
 
     # Generate perspective if we have enough comments
     MIN_COMMENTS_FOR_PERSPECTIVE = 5
-    if len(item.comments) >= MIN_COMMENTS_FOR_PERSPECTIVE and item.ai_perspective is None:
+    if (
+        len(item.comments) >= MIN_COMMENTS_FOR_PERSPECTIVE
+        and item.ai_perspective is None
+    ):
         try:
-            perspective = await _generate_perspective(item.title, item.comments)
+            perspective = await _generate_perspective(
+                item.title, item.comments, router=router
+            )
             item.ai_perspective = perspective
             item.generated_at_comment_count = len(item.comments)
         except Exception as e:
@@ -144,11 +150,11 @@ def items_to_md(now: datetime, items: List[Item]) -> str:
 def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
     def _generate_content_text(item: Item) -> Optional[str]:
         sections = []
-        
+
         # Original content section
         if item.content:
             sections.append(item.content)
-        
+
         # AI Perspective section
         if item.ai_perspective:
             sections.append("\nAI Perspective:")
@@ -159,13 +165,13 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
                 sections.append("Viewpoints:")
                 for vp in item.ai_perspective.viewpoints:
                     sections.append(f"- {vp.statement} ({vp.support_percentage}%)")
-        
+
         # Comments section
         if item.comments:
             sections.append("\nComments:")
             for comment in item.comments:
                 sections.append(f"{comment.author}: {comment.content}")
-        
+
         return "\n".join(sections) if sections else None
 
     def _generate_content_html(item: Item) -> Optional[str]:
@@ -202,7 +208,9 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
             html_parts.append("<h4>Comments</h4>")
             html_parts.append("<ul>")
             for comment in item.comments:
-                html_parts.append(f"<li><em>{comment.author}</em>: {comment.content}</li>")
+                html_parts.append(
+                    f"<li><em>{comment.author}</em>: {comment.content}</li>"
+                )
             html_parts.append("</ul>")
 
         return "\n".join(html_parts) if html_parts else None
@@ -256,12 +264,12 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
     return feed
 
 
-async def transform_items(items: List[Item], db: Database) -> List[Item]:
+async def transform_items(items: List[Item], db: Database, router=None) -> List[Item]:
     """Transform multiple items in parallel and optionally save to database progressively."""
     transformed = []
     for item in items:
         try:
-            transformed_item = await _transform_item_if_needed(item)
+            transformed_item = await _transform_item_if_needed(item, router=router)
             await db.upsert_item(transformed_item)
             logger.info(
                 f"Saved transformed item '{transformed_item.title}' to database"
