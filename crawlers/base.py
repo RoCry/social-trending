@@ -20,6 +20,14 @@ class BaseCrawler:
                 logger.debug(
                     f"Trafilatura fetched {url}:\n{text_result.splitlines()[:3]}\n..."
                 )
+                # Extract content from HTML if it's a full HTML document
+                if html_result and ("<html" in html_result or "<body" in html_result):
+                    soup = BeautifulSoup(html_result, "html.parser")
+                    body = soup.find("body")
+                    if body:
+                        html_result = "".join(str(tag) for tag in body.children)
+                    else:
+                        html_result = "".join(str(tag) for tag in soup.children)
                 return text_result, html_result
         return None, None
 
