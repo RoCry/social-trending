@@ -228,7 +228,7 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
         return {
             "id": item.id,
             "url": item.url,
-            "title": item.title,
+            "title": f"{item.title} ({len(item.comments)})",
             "content_text": text,
             "content_html": html,
             "summary": summary,
