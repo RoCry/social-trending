@@ -151,7 +151,10 @@ def items_to_md(now: datetime, items: List[Item]) -> str:
     return "\n".join(sections)
 
 
-def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
+# skip_none_perspective: if true, skip items with no perspective
+def items_to_json_feed(
+    now: datetime, items: List[Item], skip_none_perspective: bool = False
+) -> dict:
     def _generate_content_text(item: Item) -> Optional[str]:
         sections = []
 
@@ -220,6 +223,8 @@ def items_to_json_feed(now: datetime, items: List[Item]) -> dict:
         return "\n".join(html_parts) if html_parts else None
 
     def _item_to_json_item(item: Item) -> Optional[dict]:
+        if skip_none_perspective and not item.ai_perspective:
+            return None
         text = _generate_content_text(item)
         html = _generate_content_html(item)
         if not text and not html:

@@ -9,7 +9,6 @@ from models import Item
 import dotenv
 import os
 import json
-from typing import List
 
 dotenv.load_dotenv()
 logger.info(f"Using LITELLM_MODEL: {os.getenv('LITELLM_MODEL')}")
@@ -65,7 +64,7 @@ async def main():
     os.makedirs("cache", exist_ok=True)
 
     # Generate JSON Feed file
-    json_feed = items_to_json_feed(now, items)
+    json_feed = items_to_json_feed(now, items, skip_none_perspective=True)
     with open("cache/hackernews.rss.json", "w", encoding="utf-8") as f:
         json.dump(json_feed, f, indent=2, ensure_ascii=False)
     logger.info("Generated JSON Feed file at cache/hackernews.rss.json")
