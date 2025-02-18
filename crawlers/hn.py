@@ -34,6 +34,7 @@ class HackerNewsCrawler(BaseCrawler):
                 story_data = Item(
                     title=story.title,
                     url=f"https://news.ycombinator.com/item?id={story.id}",
+                    original_url=story.url,
                     content=content,
                     content_html=content_html,
                     comments=comments,

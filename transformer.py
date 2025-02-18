@@ -184,6 +184,12 @@ def items_to_json_feed(
     def _generate_content_html(item: Item) -> Optional[str]:
         html_parts = []
 
+        # Source URL section
+        if item.original_url and item.original_url != item.url:
+            html_parts.append(
+                f'<p><strong>Source:</strong> <a href="{item.original_url}">{item.original_url}</a></p>'
+            )
+
         # Original content section
         if item.content_html:
             html_parts.append(item.content_html)

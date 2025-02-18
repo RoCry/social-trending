@@ -24,6 +24,9 @@ class Item(BaseModel):
     # Original data
     title: str
     url: str = Field(description="HN/Reddit URL, not the original URL")
+    original_url: Optional[str] = Field(
+        None, description="URL of the original content source, may same as url"
+    )
     content: Optional[str] = Field(None, description="The original source content")
     content_html: Optional[str] = Field(
         None, description="The original source content in HTML format"

@@ -22,6 +22,6 @@ def make_router():
             }
         )
     logger.info(
-        f"Model: {model}, API Keys: {len(api_keys)}, {[k[:4]+"***" for k in api_keys]}, Base URL: {base_url}"
+        f"Model: {model}, API Keys: {len(api_keys)}, {[k[:4] + '***' for k in api_keys]}, Base URL: {base_url}"
     )
     return Router(model_list=model_list)
