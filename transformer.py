@@ -158,13 +158,9 @@ def items_to_json_feed(
     def _generate_content_text(item: Item) -> Optional[str]:
         sections = []
 
-        # Original content section
-        if item.content:
-            sections.append(item.content)
-
         # AI Perspective section
         if item.ai_perspective:
-            sections.append("\nAI Perspective:")
+            sections.append("AI Perspective:")
             sections.append(f"Title: {item.ai_perspective.title}")
             sections.append(f"Summary: {item.ai_perspective.summary}")
             sections.append(f"Sentiment: {item.ai_perspective.sentiment}")
@@ -172,6 +168,11 @@ def items_to_json_feed(
                 sections.append("Viewpoints:")
                 for vp in item.ai_perspective.viewpoints:
                     sections.append(f"- {vp.statement} ({vp.support_percentage}%)")
+
+        # Original content section
+        if item.content:
+            sections.append("\nOriginal Content:")
+            sections.append(item.content)
 
         # Comments section
         if item.comments:
@@ -189,12 +190,6 @@ def items_to_json_feed(
             html_parts.append(
                 f'<p><strong>Source:</strong> <a href="{item.original_url}">{item.original_url}</a></p>'
             )
-
-        # Original content section
-        if item.content_html:
-            html_parts.append(item.content_html)
-        elif item.content:
-            html_parts.append(f"<p>{item.content}</p>")
 
         # AI Perspective section
         if item.ai_perspective:
@@ -215,6 +210,12 @@ def items_to_json_feed(
                         f"<li>{vp.statement} <em>({vp.support_percentage:.0f}%)</em></li>"
                     )
                 html_parts.append("</ul>")
+
+        # Original content section
+        if item.content_html:
+            html_parts.append(item.content_html)
+        elif item.content:
+            html_parts.append(f"<p>{item.content}</p>")
 
         # Comments section
         if item.comments:
