@@ -80,8 +80,8 @@ Output in this exact format:
 async def _transform_item_if_needed(item: Item, router: Router) -> Item:
     if item.generated_at_comment_count is not None:
         comment_diff = abs(item.generated_at_comment_count - len(item.comments))
-        # Skip if comments haven't changed significantly (less than 5 or 10%)
-        if comment_diff <= 5 or comment_diff / len(item.comments) <= 0.1:
+        # Skip if comments haven't changed significantly (less than 10 or 40%)
+        if comment_diff <= 10 or comment_diff / len(item.comments) <= 0.4:
             logger.info(
                 f"Skipping perspective generation for '{item.title}' with comment count {len(item.comments)} (last generated at {item.generated_at_comment_count})"
             )
@@ -93,7 +93,7 @@ async def _transform_item_if_needed(item: Item, router: Router) -> Item:
         item.ai_perspective = None
 
     # Generate perspective if we have enough comments
-    MIN_COMMENTS_FOR_PERSPECTIVE = 5
+    MIN_COMMENTS_FOR_PERSPECTIVE = 15
     if (
         len(item.comments) >= MIN_COMMENTS_FOR_PERSPECTIVE
         and item.ai_perspective is None
