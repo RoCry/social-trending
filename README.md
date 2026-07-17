@@ -20,10 +20,10 @@ Pipeline: `crawl → reconcile → transform → save → export`.
 ## Configuration
 
 ```dotenv
-SMOLLLM_MODEL=gemini/gemini-2.0-flash
-GEMINI_API_KEY=key1,key2
+SMOLLLM_MODEL=deepseek/deepseek-v4-flash
+DEEPSEEK_API_KEY=key1,key2
 # Optional
-GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
 HN_COUNT=30
 ```
 
