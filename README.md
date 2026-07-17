@@ -1,7 +1,51 @@
-# Intro
-A real-time social media trend analyzer that tracks public discussions and sentiment across major platforms. The system aggregates content and transforms it into structured data, enhanced with AI-generated insights.
+# Social Trending
 
-# Key Features
-- List of social media websites: hacker news, reddit, twitter, etc.
-- AI generated structured data including comments trending.
-- LLM friendly data output, great for developers to build their own applications based on the data.
+Scheduled pipeline that crawls trending discussions, extracts linked article content, adds an LLM-generated Perspective,
+and publishes a Markdown digest, JSON Feed, and raw JSON. Hacker News is the current source; source-specific crawling and
+feed identity stay outside the reusable processing modules.
+
+## Architecture
+
+- **Crawler**: converts one social source into Items. `HackerNewsCrawler` receives its ContentFetcher.
+- **ContentFetcher**: extracts article text and HTML through trafilatura, BeautifulSoup, then Jina. Sync work runs in a
+  worker thread.
+- **ItemStore**: reconciles fresh Items with SQLite state, preserves cached Perspectives, saves transformed Items, and
+  removes stale state.
+- **Transformer**: applies Refresh policy and asks one PerspectiveGenerator when a Perspective is missing or stale.
+- **PerspectiveGenerator**: owns prompt, smolllm configuration, XML-first response parsing, and fenced-JSON fallback.
+- **Exporter**: pure rendering of Items into Markdown, JSON Feed, and raw JSON. Feed identity is supplied by the caller.
+
+Pipeline: `crawl → reconcile → transform → save → export`.
+
+## Configuration
+
+```dotenv
+SMOLLLM_MODEL=gemini/gemini-2.0-flash
+GEMINI_API_KEY=key1,key2
+# Optional
+GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+HN_COUNT=30
+```
+
+`SMOLLLM_MODEL` must use `provider/model` form. smolllm reads `{PROVIDER}_API_KEY` and optional
+`{PROVIDER}_BASE_URL`; comma-separated keys/endpoints enable its native balancing.
+
+## Run
+
+```sh
+uv sync --all-extras
+uv run main.py
+```
+
+Published artifacts:
+
+- `cache/hackernews.md`
+- `cache/hackernews.rss.json`
+- `cache/hackernews.json`
+- `cache/social.sqlite`
+
+Tests are fully offline:
+
+```sh
+make test
+```

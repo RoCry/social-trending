@@ -19,7 +19,7 @@ Enhances Items with Perspectives, deciding per Item whether one is needed or sta
 _Avoid_: enricher, AI enhancement step
 
 **PerspectiveGenerator**:
-Turns an Item's title and Comments into a Perspective via an LLM.
+Turns an Item's title and Comments into a Perspective via smolllm. Owns prompt, model configuration, and response parsing.
 _Avoid_: LLM client, router
 
 **Exporter**:
@@ -54,5 +54,5 @@ Merging freshly crawled Items with cached ones: comments and timestamps update, 
 _Avoid_: merge with cache, dedupe
 
 **Refresh**:
-Regenerating an Item's Perspective because its discussion changed significantly since generation (comment-count thresholds).
+Regenerating an Item's Perspective only when comment-count change exceeds both 10 comments and 40% of the current count.
 _Avoid_: regenerate, invalidate

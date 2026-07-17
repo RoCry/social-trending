@@ -7,11 +7,12 @@ requires-python = ">=3.13"
 dependencies = [
     "beautifulsoup4>=4.12.3",
     "hackernews",
-    "litellm==1.59.8",  # 1.59.9 has bug with python 3.13
     "pydantic>=2.10.5",
     "python-dotenv>=1.0.1",
     "trafilatura>=2.0.0",
     "aiosqlite>=0.20.0",
+    "smolllm==0.8.0",
+    "requests>=2.32.0",
 ]
 
 [dependency-groups]
