@@ -2,8 +2,8 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import aiosqlite
+from loguru import logger
 from models import Item
-from utils import logger
 
 ITEM_TABLE_NAME = "item"
 
@@ -29,7 +29,7 @@ class ItemStore:
                 f"CREATE INDEX IF NOT EXISTS idx_{ITEM_TABLE_NAME}_updated_at ON {ITEM_TABLE_NAME}(updated_at)"
             )
             await database.commit()
-        logger.info("ItemStore initialized at %s", self.path)
+        logger.info("ItemStore initialized at {}", self.path)
 
     async def reconcile(self, now: datetime, fetched: list[Item]) -> list[Item]:
         reconciled: list[Item] = []
@@ -69,7 +69,7 @@ class ItemStore:
             )
             await database.commit()
             deleted_count = cursor.rowcount
-        logger.info("Cleaned up %s Items older than %s days", deleted_count, before_days)
+        logger.info("Cleaned up {} Items older than {} days", deleted_count, before_days)
         return deleted_count
 
     async def _get(self, item_id: str) -> Item | None:

@@ -98,10 +98,78 @@ def test_json_feed_snapshot_pins_skip_none_perspective_behavior() -> None:
     complete_feed = items_to_json_feed(fixture_items(), identity=identity)
     perspective_feed = items_to_json_feed(fixture_items(), identity=identity, skip_none_perspective=True)
 
-    assert [item["id"] for item in complete_feed["items"]] == ["1", "2"]
+    expected_feed = {
+        "version": "https://jsonfeed.org/version/1.1",
+        "title": "Example feed",
+        "home_page_url": "https://example.test/",
+        "feed_url": "https://example.test/feed.json",
+        "description": "Top stories from Example with AI-powered analysis",
+        "authors": [
+            {
+                "name": "Social Trending Bot",
+                "url": "https://github.com/RoCry/social-trending",
+            }
+        ],
+        "language": "en-US",
+        "items": [
+            {
+                "id": "1",
+                "url": "https://example.test/discussions/1",
+                "title": "With perspective (1)",
+                "content_text": (
+                    "AI Perspective:\n"
+                    "Title: A shared theme\n"
+                    "Summary: Readers broadly agree.\n"
+                    "Sentiment: positive\n"
+                    "Viewpoints:\n"
+                    "- The change is useful (60.0%)\n\n"
+                    "Original Content:\n"
+                    "Article text\n\n"
+                    "Comments:\n"
+                    "alice: Useful discussion"
+                ),
+                "content_html": (
+                    '<p><strong>Source:</strong> <a href="https://example.test/'
+                    'articles/1">https://example.test/articles/1</a></p>\n'
+                    "<h2>AI Perspective</h2>\n"
+                    "<h3>A shared theme</h3>\n"
+                    "<p><strong>Summary:</strong> Readers broadly agree.</p>\n"
+                    "<p><strong>Overall Sentiment:</strong> positive</p>\n"
+                    "<h4>Key Viewpoints</h4>\n"
+                    "<ul>\n"
+                    "<li>The change is useful <em>(60%)</em></li>\n"
+                    "</ul>\n"
+                    "<article>Article HTML</article>\n"
+                    "<h4>Comments</h4>\n"
+                    "<ul>\n"
+                    "<li><em>alice</em>: Useful discussion</li>\n"
+                    "</ul>"
+                ),
+                "summary": "A shared theme",
+                "date_published": "2026-07-17T08:00:00+00:00",
+                "date_modified": "2026-07-17T09:00:00+00:00",
+                "authors": [{"name": "alice"}],
+                "tags": ["example"],
+            },
+            {
+                "id": "2",
+                "url": "https://example.test/discussions/2",
+                "title": "Without perspective (1)",
+                "content_text": "\nComments:\nbob: Still discussing",
+                "content_html": ("<h4>Comments</h4>\n<ul>\n<li><em>bob</em>: Still discussing</li>\n</ul>"),
+                "summary": "Without perspective",
+                "date_published": "2026-07-17T08:00:00+00:00",
+                "date_modified": "2026-07-17T09:00:00+00:00",
+                "authors": [{"name": "bob"}],
+                "tags": ["example"],
+            },
+        ],
+    }
+
+    assert complete_feed == expected_feed
     assert perspective_feed == {
-        **complete_feed,
-        "items": [complete_feed["items"][0]],
+        **expected_feed,
+        "items": [expected_feed["items"][0]],
     }
 
 

@@ -4,9 +4,9 @@ import re
 from collections.abc import Awaitable, Callable
 from typing import Protocol
 
+from loguru import logger
 from models import Comment, Item, Perspective, Viewpoint
 from smolllm import LLMResponse, ask_llm
-from utils import logger
 
 MIN_COMMENTS_FOR_PERSPECTIVE = 15
 REFRESH_COMMENT_DELTA = 10
@@ -120,7 +120,7 @@ class SmolLLMPerspectiveGenerator:
     async def generate(self, title: str, comments: list[Comment]) -> Perspective:
         comments_text = "\n".join(f"- {comment.author}: {comment.content[:500]}" for comment in comments)
         prompt = f"Title: {title}\nComments:\n{comments_text}"
-        logger.info("Generating perspective for %r", title)
+        logger.info("Generating Perspective for {!r}", title)
         response = await self._ask(
             prompt,
             system_prompt=SYSTEM_PROMPT,

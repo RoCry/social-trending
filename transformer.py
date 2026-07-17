@@ -1,10 +1,10 @@
+from loguru import logger
 from models import Item
 from perspective_generator import (
     MIN_COMMENTS_FOR_PERSPECTIVE,
     PerspectiveGenerator,
     needs_refresh,
 )
-from utils import logger
 
 
 class Transformer:
@@ -19,7 +19,7 @@ class Transformer:
     async def _transform_item(self, item: Item) -> None:
         if item.ai_perspective and needs_refresh(item):
             logger.info(
-                "Comments changed from %s to %s; refreshing Perspective for %r",
+                "Comments changed from {} to {}; refreshing Perspective for {!r}",
                 item.generated_at_comment_count,
                 len(item.comments),
                 item.title,
@@ -31,12 +31,12 @@ class Transformer:
 
         if len(item.comments) < MIN_COMMENTS_FOR_PERSPECTIVE:
             logger.info(
-                "Skipping Perspective for %r: %s comments is below minimum %s",
+                "Skipping Perspective for {!r}: {} comments is below minimum {}",
                 item.title,
                 len(item.comments),
                 MIN_COMMENTS_FOR_PERSPECTIVE,
             )
             return
 
-        item.ai_perspective = await self._perspective_generator.generate(item.title, item.comments)
+        item.ai_perspective = await self._perspective_generator.generate(title=item.title, comments=item.comments)
         item.generated_at_comment_count = len(item.comments)

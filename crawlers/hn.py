@@ -32,7 +32,7 @@ class HackerNewsCrawler:
                 content = None
                 content_html = None
                 if story.url:
-                    content, content_html = await self._content_fetcher.fetch(story.url)
+                    content, content_html = await self._content_fetcher.fetch(url=story.url)
 
                 now = self._clock()
                 items.append(

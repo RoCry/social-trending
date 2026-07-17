@@ -4,7 +4,7 @@ from collections.abc import Callable
 import requests
 import trafilatura
 from bs4 import BeautifulSoup
-from utils import logger
+from loguru import logger
 
 FetchResult = tuple[str | None, str | None]
 Extractor = Callable[[str], FetchResult]
@@ -31,12 +31,12 @@ class ContentFetcher:
     def _fetch_sync(self, url: str) -> FetchResult:
         for name, extract in self._extractors:
             try:
-                logger.debug("Fetching %s with %s", url, name)
+                logger.debug("Fetching {} with {}", url, name)
                 text, html = extract(url)
                 if text:
                     return text, html
-            except Exception as error:
-                logger.warning("%s failed for %s: %s", name, url, error)
+            except requests.RequestException as error:
+                logger.warning("{} failed for {}: {}", name, url, error)
         return None, None
 
     def _fetch_with_trafilatura(self, url: str) -> FetchResult:

@@ -13,12 +13,12 @@ from exporter import (
     items_to_raw_json,
 )
 from item_store import ItemStore
+from loguru import logger
 from perspective_generator import SmolLLMPerspectiveGenerator
 from transformer import Transformer
-from utils import logger
 
-dotenv.load_dotenv()
-logger.info("Using SMOLLLM_MODEL: %s", os.getenv("SMOLLLM_MODEL"))
+_ = dotenv.load_dotenv()
+logger.info("Using SMOLLLM_MODEL: {}", os.getenv("SMOLLLM_MODEL"))
 
 HACKER_NEWS_FEED = FeedIdentity(
     source_name="Hacker News",
@@ -34,7 +34,7 @@ async def main():
 
     # Initialize ItemStore
     db_path = "cache/social.sqlite"
-    store = ItemStore(db_path)
+    store = ItemStore(path=db_path)
     await store.init()
 
     # Clean up old items
@@ -44,20 +44,20 @@ async def main():
 
     # Fetch stories
     logger.info("Fetching stories from Hacker News...")
-    crawler = HackerNewsCrawler(ContentFetcher())
+    crawler = HackerNewsCrawler(content_fetcher=ContentFetcher())
     top_n = os.getenv("HN_COUNT", 30)
-    fetched = await crawler.fetch_top_stories(db_path, count=int(top_n))
+    fetched = await crawler.fetch_top_stories(cache_db_path=db_path, count=int(top_n))
 
     # Reconcile with cached Items
     logger.info("Reconciling with cached Items...")
-    items = await store.reconcile(now, fetched)
+    items = await store.reconcile(now=now, fetched=fetched)
 
     # Transform and enhance with AI perspective
     logger.info("Analyzing discussions with AI...")
-    items = await Transformer(perspective_generator).transform(items)
+    items = await Transformer(perspective_generator=perspective_generator).transform(items=items)
     for item in items:
-        await store.save(item)
-    logger.info(f"Completed analyzing {len(items)} discussions")
+        await store.save(item=item)
+    logger.info("Completed analyzing {} discussions", len(items))
 
     # Generate output files
     logger.info("Generating output files...")
@@ -72,7 +72,7 @@ async def main():
     # Generate markdown file
     md_content = items_to_markdown(items)
     with open("cache/hackernews.md", "w", encoding="utf-8") as f:
-        f.write(md_content)
+        _ = f.write(md_content)
     logger.info("Generated markdown file at cache/hackernews.md")
 
     # Generate JSON file

@@ -3,6 +3,7 @@ import threading
 from collections.abc import Callable
 
 import pytest
+import requests
 from content_fetcher import ContentFetcher
 
 FetchResult = tuple[str | None, str | None]
@@ -39,7 +40,7 @@ def test_fallback_chain_stops_at_the_first_successful_tier(
             if successful_tier == name:
                 return result
             if name == "beautifulsoup":
-                raise RuntimeError("tier failure also falls through")
+                raise requests.RequestException("request failure falls through")
             return None, None
 
         return fetch
@@ -54,6 +55,16 @@ def test_fallback_chain_stops_at_the_first_successful_tier(
 
     assert asyncio.run(fetcher.fetch("https://example.test/article")) == expected
     assert calls == expected_calls
+
+
+def test_unexpected_extractor_error_fails_fast() -> None:
+    def broken_extractor(url: str) -> FetchResult:
+        raise RuntimeError(f"programming error while fetching {url}")
+
+    fetcher = ContentFetcher(extractors=(("broken", broken_extractor),))
+
+    with pytest.raises(RuntimeError, match="programming error"):
+        asyncio.run(fetcher.fetch("https://example.test/article"))
 
 
 def test_fetch_runs_the_synchronous_chain_off_the_event_loop() -> None:
