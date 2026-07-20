@@ -15,7 +15,7 @@ Extracts readable article content (text + HTML) from an Item's original URL, fal
 _Avoid_: base crawler, downloader
 
 **Transformer**:
-Enhances Items with Perspectives, deciding per Item whether one is needed or stale.
+When LLM generation is enabled, enhances Items with Perspectives, deciding per Item whether one is needed or stale.
 _Avoid_: enricher, AI enhancement step
 
 **PerspectiveGenerator**:

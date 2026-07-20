@@ -23,6 +23,6 @@ Runtime order: `crawl → reconcile → transform → save → export`.
 - Crawler is source-specific and receives a ContentFetcher; no crawler inheritance.
 - ContentFetcher moves its synchronous extraction fallback chain to a worker thread.
 - ItemStore owns Reconcile and persistence across runs.
-- Transformer reaches the LLM only through PerspectiveGenerator.
+- Transformer runs only when LLM generation is explicitly enabled and reaches the LLM only through PerspectiveGenerator.
 - PerspectiveGenerator owns Refresh thresholds and structured response parsing.
 - Exporter is pure; the entrypoint supplies feed identity and performs file I/O.

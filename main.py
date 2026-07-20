@@ -14,11 +14,9 @@ from exporter import (
 )
 from item_store import ItemStore
 from loguru import logger
+from models import Item
 from perspective_generator import SmolLLMPerspectiveGenerator
 from transformer import Transformer
-
-_ = dotenv.load_dotenv()
-logger.info("Using SMOLLLM_MODEL: {}", os.getenv("SMOLLLM_MODEL"))
 
 HACKER_NEWS_FEED = FeedIdentity(
     source_name="Hacker News",
@@ -29,8 +27,28 @@ HACKER_NEWS_FEED = FeedIdentity(
 )
 
 
-async def main():
+def llm_enabled() -> bool:
+    value = os.getenv("ENABLE_LLM", "false").strip().lower()
+    if value in {"", "false"}:
+        return False
+    if value == "true":
+        return True
+    raise ValueError("ENABLE_LLM must be 'true' or 'false'")
+
+
+async def enhance_items(*, items: list[Item], enabled: bool) -> list[Item]:
+    if not enabled:
+        logger.info("LLM disabled; preserving cached Perspectives")
+        return items
+
+    logger.info("Analyzing discussions with {}", os.getenv("SMOLLLM_MODEL"))
     perspective_generator = SmolLLMPerspectiveGenerator.from_env()
+    return await Transformer(perspective_generator=perspective_generator).transform(items=items)
+
+
+async def main():
+    _ = dotenv.load_dotenv()
+    enable_llm = llm_enabled()
 
     # Initialize ItemStore
     db_path = "cache/social.sqlite"
@@ -52,9 +70,8 @@ async def main():
     logger.info("Reconciling with cached Items...")
     items = await store.reconcile(now=now, fetched=fetched)
 
-    # Transform and enhance with AI perspective
-    logger.info("Analyzing discussions with AI...")
-    items = await Transformer(perspective_generator=perspective_generator).transform(items=items)
+    # Transform and optionally enhance with AI Perspectives
+    items = await enhance_items(items=items, enabled=enable_llm)
     for item in items:
         await store.save(item=item)
     logger.info("Completed analyzing {} discussions", len(items))
