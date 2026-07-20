@@ -2,7 +2,7 @@ import asyncio
 from datetime import UTC, datetime
 
 import pytest
-from main import enhance_items, llm_enabled
+from main import apply_perspectives, llm_enabled
 from models import Comment, Item
 
 
@@ -44,7 +44,7 @@ def test_disabled_llm_leaves_items_untransformed_without_model_configuration(
     )
     items = [item]
 
-    result = asyncio.run(enhance_items(items=items, enabled=False))
+    result = asyncio.run(apply_perspectives(items=items, enabled=False))
 
     assert result is items
     assert item.ai_perspective is None

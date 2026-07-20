@@ -36,12 +36,12 @@ def llm_enabled() -> bool:
     raise ValueError("ENABLE_LLM must be 'true' or 'false'")
 
 
-async def enhance_items(*, items: list[Item], enabled: bool) -> list[Item]:
+async def apply_perspectives(*, items: list[Item], enabled: bool) -> list[Item]:
     if not enabled:
         logger.info("LLM disabled; preserving cached Perspectives")
         return items
 
-    logger.info("Analyzing discussions with {}", os.getenv("SMOLLLM_MODEL"))
+    logger.info("Generating or refreshing Perspectives")
     perspective_generator = SmolLLMPerspectiveGenerator.from_env()
     return await Transformer(perspective_generator=perspective_generator).transform(items=items)
 
@@ -70,11 +70,11 @@ async def main():
     logger.info("Reconciling with cached Items...")
     items = await store.reconcile(now=now, fetched=fetched)
 
-    # Transform and optionally enhance with AI Perspectives
-    items = await enhance_items(items=items, enabled=enable_llm)
+    # Apply Perspectives only when LLM generation is enabled
+    items = await apply_perspectives(items=items, enabled=enable_llm)
     for item in items:
         await store.save(item=item)
-    logger.info("Completed analyzing {} discussions", len(items))
+    logger.info("Prepared {} Items", len(items))
 
     # Generate output files
     logger.info("Generating output files...")
