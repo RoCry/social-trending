@@ -22,10 +22,9 @@ Pipeline: `crawl → reconcile → transform → save → export`.
 
 ```dotenv
 ENABLE_LLM=false
-SMOLLLM_MODEL=deepseek/deepseek-v4-flash
-DEEPSEEK_API_KEY=key1,key2
-# Optional
-DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+SMOLLLM_MODEL=smolserver/summary
+SMOLSERVER_API_KEY=your-api-key
+SMOLSERVER_BASE_URL=https://smolllm.rocry.com
 HN_COUNT=30
 ```
 
@@ -33,7 +32,8 @@ HN_COUNT=30
 `{PROVIDER}_BASE_URL`; comma-separated keys/endpoints enable its native balancing.
 
 LLM generation is disabled unless `ENABLE_LLM=true`. Scheduled GitHub Actions runs keep it disabled; manual dispatches
-offer an opt-in checkbox.
+offer an opt-in checkbox. A failed Perspective generation is logged and skipped without aborting the remaining Items or
+publication; a failed refresh preserves the cached Perspective.
 
 ## Run
 

@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 import pytest
 from models import Comment, Item
 from perspective_generator import (
+    PerspectiveGenerationError,
     SmolLLMPerspectiveGenerator,
     needs_refresh,
     parse_perspective,
@@ -106,12 +107,40 @@ def test_generator_reads_typed_smolllm_response() -> None:
         )
 
     generator = SmolLLMPerspectiveGenerator(model="smolserver/fast", ask=fake_ask)
-    perspective = asyncio.run(generator.generate("A title", [Comment(author="reader", content="A useful comment")]))
+    perspective = asyncio.run(
+        generator.generate(title="A title", comments=[Comment(author="reader", content="A useful comment")])
+    )
 
     assert perspective.title == "Typed response"
     assert calls[0][0] == "Title: A title\nComments:\n- reader: A useful comment"
     assert calls[0][1]["model"] == "smolserver/fast"
     assert calls[0][1]["stream"] is False
+
+
+def test_generator_maps_provider_failure_to_generation_error() -> None:
+    async def failed_ask(prompt: str, **kwargs: object) -> LLMResponse:
+        raise ValueError("provider returned invalid data")
+
+    generator = SmolLLMPerspectiveGenerator(model="smolserver/summary", ask=failed_ask)
+
+    with pytest.raises(PerspectiveGenerationError, match="Failed to generate Perspective") as error:
+        asyncio.run(
+            generator.generate(title="A title", comments=[Comment(author="reader", content="A useful comment")])
+        )
+
+    assert isinstance(error.value.__cause__, ValueError)
+
+
+def test_generator_fails_fast_on_unexpected_error() -> None:
+    async def broken_ask(prompt: str, **kwargs: object) -> LLMResponse:
+        raise AssertionError("unexpected implementation defect")
+
+    generator = SmolLLMPerspectiveGenerator(model="smolserver/summary", ask=broken_ask)
+
+    with pytest.raises(AssertionError, match="unexpected implementation defect"):
+        asyncio.run(
+            generator.generate(title="A title", comments=[Comment(author="reader", content="A useful comment")])
+        )
 
 
 def test_generator_configuration_fails_fast(monkeypatch: pytest.MonkeyPatch) -> None:
